@@ -15,12 +15,20 @@ import { useGridStore } from '@/stores/useGridStore';
 import { getSounds } from '@/data/sounds';
 import { swapSound } from '@/audio/soundLoader';
 
+/** Props for {@link SoundBrowser}. */
 interface SoundBrowserProps {
+  /** Whether the drawer is currently visible. */
   open: boolean;
+  /** Callback to close the drawer. */
   onClose: () => void;
+  /** The track to browse sounds for, or `null` when inactive. */
   track: TrackCategory | null;
 }
 
+/**
+ * Bottom-sheet drawer that lists available sounds for a given track and
+ * genre. Selecting a sound swaps it in via the audio sound loader.
+ */
 export default function SoundBrowser({ open, onClose, track }: SoundBrowserProps) {
   const genre = useGridStore((s) => s.genre);
   const currentSounds = useGridStore((s) => s.sounds);

@@ -4,14 +4,24 @@ import React from 'react';
 import Box from '@mui/material/Box';
 import { TrackCategory } from '@/types';
 
+/** Props for {@link GridCell}. */
 interface GridCellProps {
+  /** Track category this cell belongs to. */
   track: TrackCategory;
+  /** Zero-based step index within the pattern. */
   step: number;
+  /** Whether this step is toggled on. */
   active: boolean;
+  /** Whether the playhead is currently on this step. */
   isPlayhead: boolean;
+  /** Callback invoked when the cell is clicked. */
   onToggle: (track: TrackCategory, step: number) => void;
 }
 
+/**
+ * A single toggleable cell in the step sequencer grid.
+ * Memoized to avoid re-renders when sibling cells change.
+ */
 const GridCell = React.memo(function GridCell({ track, step, active, isPlayhead, onToggle }: GridCellProps) {
   return (
     <Box

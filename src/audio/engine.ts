@@ -2,6 +2,10 @@ import { loadTone, getTone } from './tone';
 
 let isInitialized = false;
 
+/**
+ * Initializes the Web Audio context by loading Tone.js, starting the audio
+ * context, and setting a default master volume. No-ops if already initialized.
+ */
 export async function initAudio(): Promise<void> {
   if (isInitialized) return;
   const Tone = await loadTone();
@@ -10,6 +14,10 @@ export async function initAudio(): Promise<void> {
   isInitialized = true;
 }
 
+/**
+ * Checks whether the audio engine has been initialized.
+ * @returns `true` if {@link initAudio} has completed successfully.
+ */
 export function isAudioInitialized(): boolean {
   return isInitialized;
 }

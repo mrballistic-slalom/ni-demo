@@ -1,5 +1,6 @@
 import { SoundDefinition, Genre, TrackCategory } from '@/types';
 
+/** Complete catalog of all available sound samples across all genres and categories. */
 export const SOUND_CATALOG: SoundDefinition[] = [
   // ── Trap ──────────────────────────────────────────────────
   { id: 'trap_kick_01', name: 'Trap Deep Kick', category: 'kick', genre: 'trap', file_ogg: '/sounds/trap/trap_kick_01.wav', file_aac: '/sounds/trap/trap_kick_01.wav' },
@@ -102,16 +103,33 @@ export const SOUND_CATALOG: SoundDefinition[] = [
   { id: 'hyperpop_fx_03', name: 'Hyperpop Sweep', category: 'fx', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_fx_03.wav', file_aac: '/sounds/hyperpop/hyperpop_fx_03.wav' },
 ];
 
+/**
+ * Retrieves all sounds matching a given genre and track category.
+ * @param genre - The genre to filter by.
+ * @param category - The track category to filter by.
+ * @returns Array of matching sound definitions.
+ */
 export function getSounds(genre: Genre, category: TrackCategory): SoundDefinition[] {
   return SOUND_CATALOG.filter(s => s.genre === genre && s.category === category);
 }
 
+/**
+ * Looks up a single sound definition by its unique ID.
+ * @param id - The sound ID (e.g., `'trap_kick_01'`).
+ * @returns The matching sound definition, or `undefined` if not found.
+ */
 export function getSound(id: string): SoundDefinition | undefined {
   return SOUND_CATALOG.find(s => s.id === id);
 }
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
+/**
+ * Returns the resolved URL for a sound's audio file.
+ * Currently remaps all genres to house sounds as a temporary fallback.
+ * @param sound - The sound definition to resolve.
+ * @returns Absolute URL path to the audio file.
+ */
 export function getSoundUrl(sound: SoundDefinition): string {
   // Temporarily use house sounds for all genres until genre-specific sounds are added
   const houseFile = sound.file_ogg.replace(

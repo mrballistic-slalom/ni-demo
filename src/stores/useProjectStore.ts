@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import { Genre, GridState, SoundSelections, TrackVolumes } from '@/types';
 import { useGridStore } from './useGridStore';
 
+/** A persisted project snapshot including grid, sounds, and metadata. */
 export interface SavedProject {
   id: string;
   title: string;
@@ -15,17 +16,24 @@ export interface SavedProject {
   savedAt: string;
 }
 
+/** State and actions for managing saved beat projects. */
 interface ProjectStore {
   currentProjectId: string | null;
   currentTitle: string;
   projects: SavedProject[];
+  /** Update the display title for the current project. */
   setCurrentTitle: (title: string) => void;
+  /** Save the current grid state as a project. Returns the project ID. */
   saveProject: () => string;
+  /** Load a saved project by ID into the grid store. */
   loadProject: (id: string) => void;
+  /** Delete a saved project by ID. Resets current project if it was active. */
   deleteProject: (id: string) => void;
+  /** Return all saved projects. */
   listProjects: () => SavedProject[];
 }
 
+/** Zustand store hook for project save/load management. Persisted to localStorage. */
 export const useProjectStore = create<ProjectStore>()(
   persist(
     (set, get) => ({

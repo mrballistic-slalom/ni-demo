@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { Genre, GridState, SoundSelections, TrackVolumes, TrackMutes, TrackSolos, TrackCategory, TRACK_ORDER, STEPS_PER_BAR } from '@/types';
 import { GENRES } from '@/data/genres';
 
+/** Serializable snapshot of grid state used for saving/loading projects. */
 interface ProjectPayload {
   genre: Genre;
   bpm: number;
@@ -15,6 +16,7 @@ interface ProjectPayload {
   modifications_count?: number;
 }
 
+/** Core beat-grid state and actions for sequencer tracks, sounds, and mix controls. */
 interface GridStore {
   genre: Genre;
   bpm: number;
@@ -26,23 +28,36 @@ interface GridStore {
   mutes: TrackMutes;
   solos: TrackSolos;
   modificationsCount: number;
+  /** Reset the grid to the default template for the given genre. */
   setGenre: (genre: Genre) => void;
+  /** Toggle a single cell on/off in the sequencer grid. */
   toggleCell: (track: TrackCategory, step: number) => void;
+  /** Assign a sound sample to a track by its sound ID. */
   setSound: (track: TrackCategory, soundId: string) => void;
+  /** Set the volume level for a track. */
   setVolume: (track: TrackCategory, volume: number) => void;
+  /** Toggle the mute state of a track. */
   toggleMute: (track: TrackCategory) => void;
+  /** Toggle the solo state of a track. */
   toggleSolo: (track: TrackCategory) => void;
+  /** Set the tempo in BPM, clamped to 60-200. */
   setBpm: (bpm: number) => void;
+  /** Set the pattern length in bars (1, 2, or 4), resizing the grid accordingly. */
   setPatternLength: (length: 1 | 2 | 4) => void;
+  /** Set the swing amount (0-100). */
   setSwing: (swing: number) => void;
+  /** Hydrate the store from a serialized project payload. */
   loadProject: (project: ProjectPayload) => void;
+  /** Return a serializable snapshot of the current grid state. */
   getProjectPayload: () => ProjectPayload;
+  /** Reset the grid to the default state for the current genre. */
   reset: () => void;
 }
 
 const initMutes = (): TrackMutes => ({ kick: false, snare: false, hihat: false, melody: false, bass: false, fx: false });
 const initSolos = (): TrackSolos => ({ kick: false, snare: false, hihat: false, melody: false, bass: false, fx: false });
 
+/** Zustand store hook for the beat-grid sequencer state. Persisted to localStorage. */
 export const useGridStore = create<GridStore>()(
   persist(
     (set, get) => ({

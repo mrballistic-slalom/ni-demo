@@ -14,6 +14,11 @@ import { startPlayback, stopPlayback, updateBpm, createSequence } from '@/audio/
 import { loadAllSounds } from '@/audio/soundLoader';
 import { GENRES } from '@/data/genres';
 
+/**
+ * Sticky bottom toolbar providing play/stop controls, a BPM slider, and
+ * pattern-length selectors. Manages audio playback lifecycle and loads
+ * sounds when the genre changes.
+ */
 export default function TransportBar() {
   const isPlaying = useTransportStore((s) => s.isPlaying);
   const genre = useGridStore((s) => s.genre);

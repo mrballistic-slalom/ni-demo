@@ -1,7 +1,14 @@
 import { Genre, GenreDefinition } from '@/types';
 
+/**
+ * Converts a pattern string to a numeric step array.
+ * 'x' maps to 1 (active), any other character maps to 0 (inactive).
+ * @param pattern - A string like `'x...x...'` representing a rhythmic pattern.
+ * @returns Array of 0/1 values for each step.
+ */
 const p = (pattern: string): number[] => pattern.split('').map(c => c === 'x' ? 1 : 0);
 
+/** Registry of all genre definitions keyed by genre ID, including display metadata, colors, and default beat templates. */
 export const GENRES: Record<Genre, GenreDefinition> = {
   trap: {
     id: 'trap',
@@ -154,4 +161,5 @@ export const GENRES: Record<Genre, GenreDefinition> = {
   },
 };
 
+/** Ordered list of available genres for UI iteration. */
 export const GENRE_LIST: Genre[] = ['trap', 'lofi', 'house', 'drill', 'hyperpop'];

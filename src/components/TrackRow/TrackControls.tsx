@@ -10,11 +10,18 @@ import { useGridStore } from '@/stores/useGridStore';
 import { TrackCategory } from '@/types';
 import { useCallback } from 'react';
 
+/** Props for {@link TrackControls}. */
 interface TrackControlsProps {
+  /** The track category to render controls for. */
   track: TrackCategory;
+  /** Callback invoked when the sound name label is clicked. */
   onSoundClick: (track: TrackCategory) => void;
 }
 
+/**
+ * Per-track mixer controls including mute, solo, volume slider, and a
+ * clickable sound name that opens the sound browser.
+ */
 export default function TrackControls({ track, onSoundClick }: TrackControlsProps) {
   const muted = useGridStore((s) => s.mutes[track]);
   const soloed = useGridStore((s) => s.solos[track]);

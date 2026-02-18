@@ -16,11 +16,19 @@ import { encodeBeatToUrl } from '@/lib/utils';
 import { useGridStore } from '@/stores/useGridStore';
 import { useProjectStore } from '@/stores/useProjectStore';
 
+/** Props for {@link ShareModal}. */
 interface ShareModalProps {
+  /** Whether the modal is currently visible. */
   open: boolean;
+  /** Callback to close the modal. */
   onClose: () => void;
 }
 
+/**
+ * Modal dialog for sharing the current beat via a generated URL.
+ * Supports clipboard copy, native Web Share API, and direct links
+ * to X (Twitter) and WhatsApp.
+ */
 export default function ShareModal({ open, onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
   const title = useProjectStore((s) => s.currentTitle);

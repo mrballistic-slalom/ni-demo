@@ -1,5 +1,6 @@
 import { createTheme } from '@mui/material/styles';
 
+/** Base dark MUI theme shared across all genres, providing default palette, typography, and component overrides. */
 export const baseTheme = createTheme({
   palette: {
     mode: 'dark',

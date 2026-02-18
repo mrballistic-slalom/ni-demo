@@ -5,6 +5,11 @@ import Box from '@mui/material/Box';
 import { useGridStore } from '@/stores/useGridStore';
 import { GENRE_THEMES } from '@/theme/genreThemes';
 
+/**
+ * Root layout wrapper that applies genre-specific CSS custom properties
+ * to the document and provides a themed full-height background.
+ * @param props.children - Child components to render inside the shell.
+ */
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const genre = useGridStore((s) => s.genre);
   const theme = GENRE_THEMES[genre];

@@ -1,5 +1,6 @@
 import { Genre } from '@/types';
 
+/** Color palette for a genre, used to style the grid, playhead, and UI elements. */
 export interface GenreTheme {
   primary: string;
   secondary: string;
@@ -10,6 +11,7 @@ export interface GenreTheme {
   background: string;
 }
 
+/** Genre-specific color themes keyed by genre ID, applied to the sequencer UI when a genre is selected. */
 export const GENRE_THEMES: Record<Genre, GenreTheme> = {
   trap: {
     primary: '#FF1744',

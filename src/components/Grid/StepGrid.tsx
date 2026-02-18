@@ -17,6 +17,11 @@ const TRACK_LABELS: Record<TrackCategory, string> = {
   fx: 'FX',
 };
 
+/**
+ * Renders the full step-sequencer grid with one row per track.
+ * Each row displays a label and a series of {@link GridCell} components.
+ * Supports horizontal scrolling for multi-bar patterns.
+ */
 export default function StepGrid() {
   const grid = useGridStore((s) => s.grid);
   const patternLength = useGridStore((s) => s.patternLength);

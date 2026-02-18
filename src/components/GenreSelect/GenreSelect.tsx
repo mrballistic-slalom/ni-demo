@@ -9,6 +9,11 @@ import { useGridStore } from '@/stores/useGridStore';
 import { initAudio } from '@/audio/engine';
 import { useTransportStore } from '@/stores/useTransportStore';
 
+/**
+ * Displays a grid of genre cards on the landing page. Selecting a genre
+ * initializes the audio engine, sets the genre in the store, and navigates
+ * to the studio view.
+ */
 export default function GenreSelect() {
   const router = useRouter();
   const setGenre = useGridStore((s) => s.setGenre);

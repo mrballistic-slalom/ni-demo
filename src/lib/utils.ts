@@ -1,20 +1,37 @@
 import { nanoid } from 'nanoid';
 import { Genre, GridState, SoundSelections, TrackVolumes, TrackCategory, TRACK_ORDER } from '@/types';
 
+/**
+ * Generates a short, URL-safe unique share ID (8 characters).
+ * @returns A nanoid-based identifier string.
+ */
 export function generateShareId(): string {
   return nanoid(8);
 }
 
+/**
+ * Formats a BPM value as a rounded display string (e.g., `"120 BPM"`).
+ * @param bpm - Beats per minute value.
+ * @returns Formatted string with "BPM" suffix.
+ */
 export function formatBPM(bpm: number): string {
   return `${Math.round(bpm)} BPM`;
 }
 
+/**
+ * Clamps a numeric value to the inclusive [min, max] range.
+ * @param value - The value to clamp.
+ * @param min - Minimum allowed value.
+ * @param max - Maximum allowed value.
+ * @returns The clamped value.
+ */
 export function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
 // --- URL-based beat sharing ---
 
+/** State snapshot of a beat used for URL-based sharing. */
 interface BeatShareState {
   genre: Genre;
   bpm: number;
@@ -23,6 +40,7 @@ interface BeatShareState {
   volumes: TrackVolumes;
 }
 
+/** Minified beat data structure with short keys for compact URL encoding. */
 interface CompactBeatData {
   g: Genre;
   b: number;

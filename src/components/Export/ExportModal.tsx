@@ -13,11 +13,19 @@ import CloseRounded from '@mui/icons-material/CloseRounded';
 import { useGridStore } from '@/stores/useGridStore';
 import { useProjectStore } from '@/stores/useProjectStore';
 
+/** Props for {@link ExportModal}. */
 interface ExportModalProps {
+  /** Whether the modal is currently visible. */
   open: boolean;
+  /** Callback to close the modal. */
   onClose: () => void;
 }
 
+/**
+ * Modal dialog for exporting the current beat as an audio file.
+ * Currently shows a placeholder; full offline rendering via Tone.Offline
+ * is planned for a future release.
+ */
 export default function ExportModal({ open, onClose }: ExportModalProps) {
   const [exporting, setExporting] = useState(false);
   const genre = useGridStore((s) => s.genre);
