@@ -1,9 +1,16 @@
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Link from 'next/link';
 
-export default function SharedBeatPage({ params }: { params: { shareId: string } }) {
+function BeatContent() {
+  const searchParams = useSearchParams();
+  const shareId = searchParams.get('id');
+
   return (
     <Box sx={{
       minHeight: '100vh',
@@ -19,7 +26,9 @@ export default function SharedBeatPage({ params }: { params: { shareId: string }
         Shared Beat
       </Typography>
       <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, textAlign: 'center' }}>
-        Beat playback coming soon. Share ID: {params.shareId}
+        {shareId
+          ? `Beat playback coming soon. Share ID: ${shareId}`
+          : 'No beat ID provided.'}
       </Typography>
       <Button
         component={Link}
@@ -30,5 +39,13 @@ export default function SharedBeatPage({ params }: { params: { shareId: string }
         Make Your Own Beat
       </Button>
     </Box>
+  );
+}
+
+export default function SharedBeatPage() {
+  return (
+    <Suspense>
+      <BeatContent />
+    </Suspense>
   );
 }

@@ -35,12 +35,12 @@ export default function AuthModal() {
       // For now, just close and run pending action
       closeAuthModal();
       pendingAction?.();
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  }, [tab, email, password, closeAuthModal, pendingAction]);
+  }, [closeAuthModal, pendingAction]);
 
   return (
     <Dialog

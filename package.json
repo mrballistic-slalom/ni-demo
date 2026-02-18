@@ -6,27 +6,33 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "generate-sounds": "node scripts/generateSounds.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
-    "@mui/material": "^5.15.0",
     "@mui/icons-material": "^5.15.0",
-    "@supabase/supabase-js": "^2.39.0",
+    "@mui/material": "^5.15.0",
     "@supabase/ssr": "^0.1.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "framer-motion": "^11.0.0",
+    "nanoid": "^5.0.0",
     "next": "^14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tone": "^14.7.77",
-    "zustand": "^4.5.0",
-    "nanoid": "^5.0.0",
-    "framer-motion": "^11.0.0"
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
     "typescript": "^5.3.0"
   }
 }

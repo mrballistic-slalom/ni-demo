@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -24,8 +24,6 @@ interface SoundBrowserProps {
 export default function SoundBrowser({ open, onClose, track }: SoundBrowserProps) {
   const genre = useGridStore((s) => s.genre);
   const currentSounds = useGridStore((s) => s.sounds);
-  const [previewId, setPreviewId] = useState<string | null>(null);
-
   const sounds = track ? getSounds(genre, track) : [];
   const currentSoundId = track ? currentSounds[track] : null;
 

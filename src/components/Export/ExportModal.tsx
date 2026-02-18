@@ -24,7 +24,7 @@ export default function ExportModal({ open, onClose }: ExportModalProps) {
   const bpm = useGridStore((s) => s.bpm);
   const title = useProjectStore((s) => s.currentTitle);
 
-  const handleExport = useCallback(async (format: 'wav') => {
+  const handleExport = useCallback(async (_format: 'wav') => {
     setExporting(true);
     try {
       // For MVP, create a simple notification that export is coming soon

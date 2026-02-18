@@ -27,7 +27,7 @@ export default function ShareModal({ open, onClose }: ShareModalProps) {
   // For now, generate a share URL client-side
   const shareId = generateShareId();
   const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/beat/${shareId}`
+    ? `${window.location.origin}/beat?id=${shareId}`
     : '';
 
   const handleCopy = useCallback(async () => {

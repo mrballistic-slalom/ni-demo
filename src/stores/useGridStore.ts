@@ -2,6 +2,18 @@ import { create } from 'zustand';
 import { Genre, GridState, SoundSelections, TrackVolumes, TrackMutes, TrackSolos, TrackCategory, TRACK_ORDER, STEPS_PER_BAR } from '@/types';
 import { GENRES } from '@/data/genres';
 
+interface ProjectPayload {
+  genre: Genre;
+  bpm: number;
+  pattern_length: 1 | 2 | 4;
+  swing: number;
+  grid: GridState;
+  sounds: SoundSelections;
+  volumes: TrackVolumes;
+  mutes?: TrackMutes;
+  modifications_count?: number;
+}
+
 interface GridStore {
   genre: Genre;
   bpm: number;
@@ -22,8 +34,8 @@ interface GridStore {
   setBpm: (bpm: number) => void;
   setPatternLength: (length: 1 | 2 | 4) => void;
   setSwing: (swing: number) => void;
-  loadProject: (project: any) => void;
-  getProjectPayload: () => any;
+  loadProject: (project: ProjectPayload) => void;
+  getProjectPayload: () => ProjectPayload;
   reset: () => void;
 }
 

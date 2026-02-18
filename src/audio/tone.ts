@@ -6,7 +6,8 @@ export async function loadTone(): Promise<ToneModule> {
   if (!toneModule) {
     const mod = await import('tone');
     // Handle both ESM default export and namespace import patterns
-    toneModule = (mod as any).default || mod;
+    const modRecord = mod as Record<string, unknown>;
+    toneModule = (modRecord.default as ToneModule) || mod;
   }
   return toneModule!;
 }
