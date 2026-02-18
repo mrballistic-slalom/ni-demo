@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
         run: npx next lint
 
   deploy:
-    name: Build & Deploy
+    name: Deploy
     needs: check
     runs-on: ubuntu-latest
     environment:
@@ -57,7 +57,7 @@ jobs:
       - name: Build
         run: npx next build
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: out

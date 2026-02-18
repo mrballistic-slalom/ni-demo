@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -12,7 +12,8 @@ import IconButton from '@mui/material/IconButton';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import ContentCopyRounded from '@mui/icons-material/ContentCopyRounded';
 import CheckRounded from '@mui/icons-material/CheckRounded';
-import { generateShareId } from '@/lib/utils';
+import { encodeBeatToUrl } from '@/lib/utils';
+import { useGridStore } from '@/stores/useGridStore';
 import { useProjectStore } from '@/stores/useProjectStore';
 
 interface ShareModalProps {
@@ -24,11 +25,19 @@ export default function ShareModal({ open, onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
   const title = useProjectStore((s) => s.currentTitle);
 
-  // For now, generate a share URL client-side
-  const shareId = generateShareId();
-  const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/beat?id=${shareId}`
-    : '';
+  const genre = useGridStore((s) => s.genre);
+  const bpm = useGridStore((s) => s.bpm);
+  const grid = useGridStore((s) => s.grid);
+  const sounds = useGridStore((s) => s.sounds);
+  const volumes = useGridStore((s) => s.volumes);
+
+  const shareUrl = useMemo(() => {
+    const path = encodeBeatToUrl({ genre, bpm, grid, sounds, volumes });
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}${path}`;
+    }
+    return path;
+  }, [genre, bpm, grid, sounds, volumes]);
 
   const handleCopy = useCallback(async () => {
     try {

@@ -18,7 +18,6 @@ import SoundBrowser from '@/components/SoundBrowser/SoundBrowser';
 import ShareModal from '@/components/Share/ShareModal';
 import ExportModal from '@/components/Export/ExportModal';
 import { useGridStore } from '@/stores/useGridStore';
-import { useAuthStore } from '@/stores/useAuthStore';
 import { TRACK_ORDER, TrackCategory } from '@/types';
 import { GENRES } from '@/data/genres';
 
@@ -26,9 +25,6 @@ export default function StudioPage() {
   const router = useRouter();
   const genre = useGridStore((s) => s.genre);
   const genreDef = GENRES[genre];
-  const user = useAuthStore((s) => s.user);
-  const openAuthModal = useAuthStore((s) => s.openAuthModal);
-
   const [soundBrowserOpen, setSoundBrowserOpen] = useState(false);
   const [soundBrowserTrack, setSoundBrowserTrack] = useState<TrackCategory | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -40,28 +36,16 @@ export default function StudioPage() {
   }, []);
 
   const handleSave = useCallback(() => {
-    if (!user) {
-      openAuthModal(() => {/* TODO: save after auth */});
-      return;
-    }
     // TODO: implement save
-  }, [user, openAuthModal]);
+  }, []);
 
   const handleShare = useCallback(() => {
-    if (!user) {
-      openAuthModal(() => setShareModalOpen(true));
-      return;
-    }
     setShareModalOpen(true);
-  }, [user, openAuthModal]);
+  }, []);
 
   const handleExport = useCallback(() => {
-    if (!user) {
-      openAuthModal(() => setExportModalOpen(true));
-      return;
-    }
     setExportModalOpen(true);
-  }, [user, openAuthModal]);
+  }, []);
 
   return (
     <AppShell>

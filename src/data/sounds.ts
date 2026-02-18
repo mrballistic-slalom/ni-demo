@@ -111,5 +111,10 @@ export function getSound(id: string): SoundDefinition | undefined {
 }
 
 export function getSoundUrl(sound: SoundDefinition): string {
-  return sound.file_ogg;
+  // Temporarily use house sounds for all genres until genre-specific sounds are added
+  const houseFile = sound.file_ogg.replace(
+    /\/sounds\/\w+\/\w+_(kick|snare|hihat|melody|bass|fx)_(\d+)\.wav/,
+    '/sounds/house/house_$1_$2.wav'
+  );
+  return houseFile;
 }
