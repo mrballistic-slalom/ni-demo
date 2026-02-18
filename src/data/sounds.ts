@@ -110,11 +110,13 @@ export function getSound(id: string): SoundDefinition | undefined {
   return SOUND_CATALOG.find(s => s.id === id);
 }
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 export function getSoundUrl(sound: SoundDefinition): string {
   // Temporarily use house sounds for all genres until genre-specific sounds are added
   const houseFile = sound.file_ogg.replace(
     /\/sounds\/\w+\/\w+_(kick|snare|hihat|melody|bass|fx)_(\d+)\.wav/,
     '/sounds/house/house_$1_$2.wav'
   );
-  return houseFile;
+  return `${basePath}${houseFile}`;
 }
