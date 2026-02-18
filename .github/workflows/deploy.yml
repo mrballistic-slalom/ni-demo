@@ -51,9 +51,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Generate placeholder sounds
-        run: node scripts/generateSounds.mjs
-
       - name: Build
         run: npx next build
 
