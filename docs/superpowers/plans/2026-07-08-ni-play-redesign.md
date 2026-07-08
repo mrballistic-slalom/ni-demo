@@ -4,13 +4,13 @@
 
 **Goal:** Rebuild NI Play as a zero-backend, per-genre-skinned browser beat toy with genuinely genre-distinct audio (offline-rendered drum one-shots + Tone.js synth voices), a landing explainer that flows into the genre picker, and Vercel deployment.
 
-**Architecture:** Next.js 14 App Router, static-friendly but deployed on Vercel (served at root). Zustand for state. Audio is a `Voice` abstraction: `SampleVoice` (Tone.Player over offline-rendered one-shots) for kick/snare/hihat/fx, `SynthVoice` (Tone.js instruments) for bass/melody. A `Tone.Sequence` triggers voices. Styling is Emotion `styled` + a CSS-custom-property skin system (one full skin per genre), animated with Motion (the `motion` package, imported from `motion/react` — the current name for Framer Motion). Share encodes the beat into the URL; export renders WAV via `OfflineAudioContext`.
+**Architecture:** Next.js 16 App Router (Turbopack), deployed on Vercel (served at root). Zustand for state. Audio is a `Voice` abstraction: `SampleVoice` (Tone.Player over offline-rendered one-shots) for kick/snare/hihat/fx, `SynthVoice` (Tone.js instruments) for bass/melody. A `Tone.Sequence` triggers voices. Styling is Emotion `styled` + a CSS-custom-property skin system (one full skin per genre), animated with Motion (the `motion` package, imported from `motion/react` — the current name for Framer Motion). Share encodes the beat into the URL; export renders WAV via `OfflineAudioContext`.
 
-**Tech Stack:** Next.js 15, React 19, TypeScript, Emotion (`@emotion/styled`, `@emotion/react`), Motion (`motion` / `motion/react`), lucide-react, Zustand, Tone.js, `next/font`, Vercel (Git integration).
+**Tech Stack:** Next.js 16 (Turbopack), React 19, TypeScript 6.0.3, Emotion (`@emotion/styled`, `@emotion/react`), Motion (`motion` / `motion/react`), lucide-react, Zustand, Tone.js, `next/font`, Vercel (Git integration).
 
 ## Global Constraints
 
-- **Framework:** Next.js 14 App Router only; `src/app/`, no `pages/`. `'use client'` only where audio/state/interaction requires it.
+- **Framework:** Next.js 16 App Router only; `src/app/`, no `pages/`. `'use client'` only where audio/state/interaction requires it.
 - **No MUI, no Tailwind.** All styling via Emotion `styled()` / `css` + CSS custom properties. Icons via `lucide-react`.
 - **Dark, mobile-first.** Design at 375px first; scale up. WCAG touch targets ≥ 44px.
 - **Genre colors/skins via CSS custom properties** set on a wrapper element; components read `var(--genre-*)`. Never hardcode a genre color in a component.
@@ -19,7 +19,8 @@
 - **iOS audio:** `Tone.start()` must be called inside a real user gesture (the first genre tap). Resume `AudioContext` on `visibilitychange`.
 - **Tone.js** for all audio; no raw Web Audio API except the `OfflineAudioContext` render in the exporter.
 - **Commit after every task.** Conventional commit messages. End commit messages with the `Co-Authored-By` trailer.
-- **Toolchain:** Node **≥ 24** (`.nvmrc` + `package.json` `engines`). All libraries upgraded to latest — this means **Next.js 15 + React 19**, plus latest Tone/Zustand/Emotion/Motion (`motion`)/TypeScript/ESLint/lucide-react.
+- **Test quality gate (user-mandated):** **zero failing tests, always**, and **≥ 80% Vitest coverage** enforced via hard thresholds in `vitest.config.ts` and run in CI (`test:coverage`). Coverage is scoped (via `include`) to the logic-bearing code where unit tests are meaningful — `src/lib/**` (beat codec, grid math), `src/audio/voice.ts` (voice-spec routing), `src/audio/exporter.ts` (`audioBufferToWav`), `src/data/genres.ts`, `src/data/sounds.ts`, `src/theme/skins.ts`, and `scripts/renderSounds.mjs` DSP helpers. Genuinely-untestable runtime/visual code is EXCLUDED and browser-verified instead: `src/audio/sequencer.ts` + `src/audio/synthKit.ts` + `src/audio/soundLoader.ts` + `src/audio/engine.ts` + `src/audio/tone.ts` (Tone.js runtime glue), `src/components/**` (except any with extractable pure logic, which SHOULD be tested), `src/app/**` page shells, `src/stores/**`, `src/theme/GenreSkinProvider.tsx`, `src/theme/fonts.ts`, `src/types/**`, all config, `src/test/**`. Every task that adds an `include`-scoped module MUST add tests keeping it ≥ 80%. `passWithNoTests: true` so an empty suite never reds CI. **CI enforcement ramp:** CI runs plain `npm test` until the end of Milestone 4 (when the entire included set is tested), then switches to `npm run test:coverage` and must stay ≥ 80% thereafter; before then the per-milestone gate reports coverage without hard-failing on the global number.
+- **Toolchain:** Node **≥ 24** (`.nvmrc` + `package.json` `engines`). Newest-usable stack — **Next.js 16 (Turbopack) + React 19 + TypeScript 6.0.3**, plus latest Tone/Zustand/Emotion/Motion (`motion`)/lucide-react. **TypeScript pinned to 6.0.3** (the newest JS-based line; `typescript-eslint` peer is `<6.1.0`) and **ESLint at 9.x**. TS **7.x is rejected**: its native compiler ships no programmatic API, breaking Next's type step and `@typescript-eslint` (evidence: `docs/superpowers/spike-next16-ts7.md`). Next 16 removed `next lint`; linting is flat-config ESLint (`eslint.config.mjs`). `tsconfig` `lib` includes `es2025`.
 - **Deploy target:** Vercel, at root (no `basePath`), **already connected via Git integration** — pushes deploy automatically; no CLI auth. CI (GitHub Actions, Node 24) runs typecheck/test/build on push/PR.
 
 ---
@@ -221,45 +222,59 @@ git commit -m "chore: swap MUI/nanoid for lucide-react, add Vitest
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
-### Task 2: Vercel-ready Next config
+### Task 2: Adopt Next 16 (Turbopack) + Vercel-ready config
+
+A spike (`docs/superpowers/spike-next16-ts7.md`) proved Next 16 is viable: the custom `webpack()` Tone alias is legacy cruft (Tone is loaded via dynamic `import('tone')` in `src/audio/tone.ts`, and Turbopack bundles Tone 15's ESM natively), so dropping it unblocks Next 16. TypeScript stays at 5.9.3 (TS 7's native compiler ships no programmatic API, breaking Next's type step and `@typescript-eslint` — evidence in the spike report). Next 16 also **removed the `next lint` command**, so the lint script must migrate to flat-config ESLint.
 
 **Files:**
-- Modify: `next.config.js`
+- Modify: `next.config.js`, `tsconfig.json`, `package.json` (next dep + lint script)
+- Create: `eslint.config.mjs`
+- Delete: `.eslintrc.json`
 - Modify: `src/data/sounds.ts` (remove base-path prefix in `getSoundUrl`)
 
 **Interfaces:**
-- Produces: app serves at root; `getSoundUrl(sound)` returns `sound.file` unmodified path.
+- Produces: app builds on Next 16 + Turbopack at root (no basePath); `getSoundUrl(sound)` returns the unmodified path; `npm run lint` works via flat config.
 
-- [ ] **Step 1: Replace `next.config.js`:**
+- [ ] **Step 1: Upgrade to Next 16.** Run: `npm install next@latest`. Confirm `npx next --version` reports 16.x. (No `.npmrc legacy-peer-deps` needed — that was only for the rejected TS 7 path.)
+
+- [ ] **Step 2: Replace `next.config.js`** — drop the webpack alias, `output: 'export'`, `basePath`, `assetPrefix`, `images.unoptimized`, and the `NEXT_PUBLIC_BASE_PATH` env plumbing (Turbopack needs none of it):
 
 ```js
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        tone: require.resolve('tone/build/esm/index.js'),
-      };
-    }
-    return config;
-  },
-};
+const nextConfig = {};
 module.exports = nextConfig;
 ```
 
-- [ ] **Step 2: In `src/data/sounds.ts`, delete the `basePath` const and the house-remap/basePath logic in `getSoundUrl`.** (Full rewrite of `sounds.ts` happens in Task 9; here just remove the base-path prefix so nothing depends on `NEXT_PUBLIC_BASE_PATH`.) Temporary body: `return sound.file_ogg;`
+- [ ] **Step 3: In `src/data/sounds.ts`, delete the `basePath` const and the house-remap/basePath logic in `getSoundUrl`.** (Full rewrite of `sounds.ts` happens in Task 9; here just remove the base-path prefix so nothing depends on `NEXT_PUBLIC_BASE_PATH`.) Temporary body: `return sound.file_ogg;`
 
-- [ ] **Step 3: Verify build.**
+- [ ] **Step 4: Update `tsconfig.json` `compilerOptions`** — set `"lib": ["dom","dom.iterable","es2025"]` (was `esnext`), keep `"module": "esnext"`, `"moduleResolution": "bundler"`, `paths`, `plugins`, `jsx`, `strict`, `noEmit`. Leave `include`/`exclude` as Next set them.
 
-Run: `npm run build`
-Expected: builds without `output: export`/basePath; no reference to `NEXT_PUBLIC_BASE_PATH`.
+- [ ] **Step 5: Migrate lint to flat config** (Next 16 removed `next lint`). Create `eslint.config.mjs`:
 
-- [ ] **Step 4: Commit.**
+```js
+import { FlatCompat } from '@eslint/eslintrc';
+
+const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
+
+export default [
+  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  { ignores: ['.next/**', 'node_modules/**', 'out/**', 'coverage/**'] },
+];
+```
+
+Install the flat-config bridge if not present: `npm install -D @eslint/eslintrc`. Delete `.eslintrc.json` (`git rm .eslintrc.json`). Change the `package.json` `lint` script from `next lint` to `eslint .`. If `next/typescript` isn't resolvable, fall back to `compat.extends('next/core-web-vitals')` only and note it.
+
+- [ ] **Step 6: Verify everything green.**
+
+Run: `npm run build && npm run typecheck && npm run lint && npm test`
+Expected: `next build` succeeds on Next 16 + Turbopack (watch for any Tone resolution error — there should be none; if one appears, report it, do NOT re-add the webpack alias without asking); typecheck clean; lint clean; tests pass (empty ok). Also `grep -rn "NEXT_PUBLIC_BASE_PATH" src next.config.js` → empty.
+
+- [ ] **Step 7: Commit.**
 
 ```bash
-git add next.config.js src/data/sounds.ts
-git commit -m "build: target Vercel at root, drop static-export basePath
+git add next.config.js tsconfig.json package.json package-lock.json eslint.config.mjs src/data/sounds.ts
+git rm .eslintrc.json
+git commit -m "build: adopt Next 16 + Turbopack, drop webpack Tone alias and basePath, migrate ESLint flat config
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
@@ -378,28 +393,34 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ### Task 4: Fonts + GenreSkinProvider + de-MUI layout
 
 **Files:**
-- Create: `src/theme/fonts.ts`, `src/theme/GenreSkinProvider.tsx`
-- Modify: `src/app/layout.tsx`, `src/components/Layout/ThemeRegistry.tsx` (remove MUI theme registry), `src/components/Layout/AppShell.tsx`
+- Create: `src/theme/fonts.ts`, `src/theme/GenreSkinProvider.tsx`, `src/theme/EmotionRegistry.tsx`
+- Modify: `src/app/layout.tsx`, `src/components/Layout/AppShell.tsx`
+- Delete: `src/components/Layout/ThemeRegistry.tsx` (MUI), `src/theme/theme.ts` (MUI `createTheme`)
 
 **Interfaces:**
 - Consumes: `SKINS`, `skinToCssVars` (Task 3); `useGridStore` genre.
-- Produces: `<GenreSkinProvider>` wraps app, sets CSS vars on a `<div data-genre>` from the active genre; `DISPLAY_FONTS: Record<Genre, string>` (CSS var names / className) and `bodyFont`.
+- Produces: `<EmotionRegistry>` (Emotion SSR cache for the App Router); `<GenreSkinProvider>` wraps app, sets CSS vars on a `<div data-genre>` from the active genre; `DISPLAY_FONT_CLASS: Record<Genre, string>` and `bodyFontClass`.
+
+**CRITICAL — Emotion + App Router SSR:** we're dropping MUI but keeping Emotion `styled()`. Emotion needs an App-Router-compatible registry or SSR won't flush styles (FOUC + hydration warnings). Create `src/theme/EmotionRegistry.tsx` (`'use client'`) using the standard pattern: a `createCache({ key: 'ni' })`, a `useServerInsertedHTML` that flushes `cache.inserted` as a `<style data-emotion>` tag, wrapping children in `<CacheProvider value={cache}>`. Wrap the app in `<EmotionRegistry>` inside `layout.tsx`. Verify no "style insertion" hydration warning and no unstyled flash.
 
 - [ ] **Step 1: Create `src/theme/fonts.ts`** using `next/font/google` — Inter for body, and one display face per genre (e.g. Trap → `Archivo` condensed heavy; Lo-Fi → `Fraunces`; House → `Space_Grotesk`; Drill → `Oswald`; Hyperpop → `Baloo_2`). Export `bodyFontClass` and `DISPLAY_FONT_CLASS: Record<Genre,string>`. (Exact faces may be refined with the design skills; keep the export shape.)
 
 - [ ] **Step 2: Create `src/theme/GenreSkinProvider.tsx`** (`'use client'`): reads `useGridStore(s=>s.genre)`, computes `skinToCssVars(SKINS[genre])`, renders `<div data-genre={genre} style={vars} className={DISPLAY_FONT_CLASS[genre]}>{children}</div>` with `transition` on color vars. Also apply `--genre-bg` to the wrapper background and min-height 100dvh.
 
-- [ ] **Step 3: Rewrite `src/app/layout.tsx`** to drop the MUI `ThemeRegistry`, apply `bodyFontClass` to `<body>`, set `metadata` (title/description with curly copy), and wrap children in `GenreSkinProvider`. Delete MUI-based `ThemeRegistry.tsx` (or gut it). `AppShell` becomes a thin Emotion wrapper.
+- [ ] **Step 3: Create `src/theme/EmotionRegistry.tsx`** (`'use client'`) — the App Router Emotion SSR registry (see the CRITICAL note above): `createCache({ key: 'ni' })`, `useServerInsertedHTML` flushing inserted styles into a `<style data-emotion>` tag, children wrapped in `<CacheProvider>`.
 
-- [ ] **Step 4: Verify build + dev render.**
+- [ ] **Step 4: Rewrite `src/app/layout.tsx`** — remove the MUI `ThemeRegistry` import/usage, apply `bodyFontClass` to `<body>`, set `metadata` (title/description with curly copy), and wrap children in `<EmotionRegistry><GenreSkinProvider>…`. Delete `src/components/Layout/ThemeRegistry.tsx` and `src/theme/theme.ts` (both MUI). `AppShell` becomes a thin Emotion wrapper (no MUI).
 
-Run: `npm run build` then `npm run dev`, load `/` — page renders with no MUI imports. Grep check: `grep -rn "@mui" src/ || echo "no MUI refs"` should print `no MUI refs` by end of Milestone 5 (some components still reference MUI until reskinned; acceptable now if `/` and `layout` are clean).
+- [ ] **Step 5: Verify build + SSR styling.**
 
-- [ ] **Step 5: Commit.**
+Run: `npm run build && npm run typecheck && npm run lint && npm test` (all green). Then `npm run dev`, load `/`: (a) page renders, (b) **no React hydration warning** in the console about style insertion, (c) no unstyled flash (view-source / initial HTML contains a `<style data-emotion>` tag). Note: `grep -rn "@mui" src/` will STILL show hits in un-reskinned components (removed across Milestone 5) — that is expected; only `layout.tsx`, `AppShell.tsx`, and the deleted files must be MUI-free now.
+
+- [ ] **Step 6: Commit.**
 
 ```bash
-git add src/theme/fonts.ts src/theme/GenreSkinProvider.tsx src/app/layout.tsx src/components/Layout
-git commit -m "feat: genre skin provider + display fonts, drop MUI theme registry
+git add src/theme/fonts.ts src/theme/GenreSkinProvider.tsx src/theme/EmotionRegistry.tsx src/app/layout.tsx src/components/Layout src/theme/theme.ts
+git rm src/components/Layout/ThemeRegistry.tsx src/theme/theme.ts
+git commit -m "feat: Emotion SSR registry, genre skin provider + display fonts; drop MUI theme registry
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```

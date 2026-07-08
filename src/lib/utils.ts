@@ -96,8 +96,7 @@ export function encodeBeatToUrl(state: BeatShareState): string {
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-  return `${basePath}/beat?b=${encoded}`;
+  return `/beat?b=${encoded}`;
 }
 
 /**

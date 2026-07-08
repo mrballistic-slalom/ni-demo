@@ -122,19 +122,11 @@ export function getSound(id: string): SoundDefinition | undefined {
   return SOUND_CATALOG.find(s => s.id === id);
 }
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-
 /**
  * Returns the resolved URL for a sound's audio file.
- * Currently remaps all genres to house sounds as a temporary fallback.
  * @param sound - The sound definition to resolve.
  * @returns Absolute URL path to the audio file.
  */
 export function getSoundUrl(sound: SoundDefinition): string {
-  // Temporarily use house sounds for all genres until genre-specific sounds are added
-  const houseFile = sound.file_ogg.replace(
-    /\/sounds\/\w+\/\w+_(kick|snare|hihat|melody|bass|fx)_(\d+)\.wav/,
-    '/sounds/house/house_$1_$2.wav'
-  );
-  return `${basePath}${houseFile}`;
+  return sound.file_ogg;
 }

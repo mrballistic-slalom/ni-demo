@@ -43,7 +43,7 @@ Kept, because they genuinely work client-side and deliver the payoff:
 
 | Layer | Current | New | Why |
 |---|---|---|---|
-| Framework | Next.js 14 App Router | **Keep** | Solved deployment quirks; framework isn't the stale part. |
+| Framework | Next.js 14 App Router | **Keep, upgraded to Next 16 (Turbopack)** | Framework isn't the stale part; bumped to latest per toolchain goal. |
 | Styling | MUI v5 (`sx`/`styled`) | **Emotion `styled` + CSS-variable theming** | Bespoke per-genre skins fight Material defaults; Emotion is already a dep and gives full control. **No Tailwind** (standing rule). |
 | Icons | `@mui/icons-material` | **`lucide-react`** | Clean, tree-shakeable, matches a custom look. |
 | Animation | framer-motion (installed, unused) | **Motion** (`motion` / `motion/react`) | Current package for Framer Motion. Cell toggles, playhead, genre transitions. |
@@ -53,7 +53,7 @@ Kept, because they genuinely work client-side and deliver the payoff:
 | Backend | Supabase | **None** | Client-only demo. |
 | Toolchain | Node (unpinned), mixed dep versions | **Node ≥ 24, all libraries upgraded to latest** | User request; `.nvmrc` + `engines` pin it; CI runs on Node 24. |
 
-Upgrading to latest pulls **Next.js 15 + React 19** (and latest Tone/Zustand/Emotion/Motion/TypeScript/ESLint). Since the app is being rebuilt, this is low marginal cost; the upgrade task fixes any React 19 / Next 15 breakages.
+Upgrading to latest pulls **Next.js 16 (Turbopack) + React 19 + TypeScript 6.0.3** (and latest Tone/Zustand/Emotion/Motion). **TypeScript is 6.0.3** — the newest JS-based line, within `typescript-eslint`'s `<6.1.0` peer range. **TS 7.x is rejected**: a spike (`docs/superpowers/spike-next16-ts7.md`) confirmed its native compiler ships no programmatic API, breaking Next's type step and `@typescript-eslint`; ESLint stays at 9.x. Next 16 works once the legacy webpack Tone alias is dropped (Tone is async-imported; Turbopack bundles its ESM natively).
 
 **Removed deps:** `@mui/material`, `@mui/icons-material`, `nanoid`.
 **Added deps:** `lucide-react`, `motion` (replaces `framer-motion`). (Emotion, zustand, tone already present.)
@@ -64,7 +64,7 @@ Upgrading to latest pulls **Next.js 15 + React 19** (and latest Tone/Zustand/Emo
 
 - Drop `output: 'export'`, `basePath`, `assetPrefix`, and `images: { unoptimized: true }` from `next.config.js`.
 - Remove the `NEXT_PUBLIC_BASE_PATH` env plumbing and the base-path prefixing in `getSoundUrl`.
-- Keep the Tone.js ESM webpack alias.
+- Drop the legacy Tone.js ESM webpack alias entirely — Next 16 + Turbopack bundles Tone 15's ESM natively (Tone is async-imported, never SSR'd), so the alias is unnecessary and Next 16 rejects custom `webpack()` config anyway.
 - The repo is **already connected to Vercel via Git integration**, so deploys happen automatically: pushing the `redesign/ni-play` branch produces a preview deploy, and merging to the default branch produces production. Remove the old `.github/workflows/deploy.yml` (GitHub Pages).
 - Add a **CI workflow** (`.github/workflows/ci.yml`) on **Node 24+** running `typecheck`, `test`, and `build` on push/PR — separate from Vercel's own build.
 - **Dynamic OG image:** a route (`app/beat/opengraph-image.tsx` or an `og` route handler) reads the URL-encoded beat and renders a branded preview (genre color, title, a mini render of the pattern) via `next/og`. No database needed.

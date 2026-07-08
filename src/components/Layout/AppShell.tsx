@@ -1,37 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
-import Box from '@mui/material/Box';
-import { useGridStore } from '@/stores/useGridStore';
-import { GENRE_THEMES } from '@/theme/genreThemes';
+import styled from '@emotion/styled';
 
 /**
- * Root layout wrapper that applies genre-specific CSS custom properties
- * to the document and provides a themed full-height background.
- * @param props.children - Child components to render inside the shell.
+ * Thin structural wrapper for page content. Genre theming (CSS custom
+ * properties, background, display font) now lives in `GenreSkinProvider`
+ * at the root layout, which wraps every page — `AppShell` no longer owns
+ * any theming logic itself, just a relatively-positioned full-height
+ * container for page-level content to sit in.
  */
+const ShellRoot = styled.div`
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+`;
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const genre = useGridStore((s) => s.genre);
-  const theme = GENRE_THEMES[genre];
-
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--genre-primary', theme.primary);
-    root.style.setProperty('--genre-secondary', theme.secondary);
-    root.style.setProperty('--genre-accent', theme.accent);
-    root.style.setProperty('--genre-cell-active', theme.cellActive);
-    root.style.setProperty('--genre-cell-inactive', theme.cellInactive);
-    root.style.setProperty('--genre-playhead', theme.playhead);
-    root.style.setProperty('--genre-background', theme.background);
-  }, [theme]);
-
-  return (
-    <Box sx={{
-      minHeight: '100vh',
-      backgroundColor: theme.background,
-      transition: 'background-color 0.3s ease',
-    }}>
-      {children}
-    </Box>
-  );
+  return <ShellRoot>{children}</ShellRoot>;
 }
