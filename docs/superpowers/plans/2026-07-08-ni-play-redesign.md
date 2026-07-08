@@ -393,28 +393,34 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ### Task 4: Fonts + GenreSkinProvider + de-MUI layout
 
 **Files:**
-- Create: `src/theme/fonts.ts`, `src/theme/GenreSkinProvider.tsx`
-- Modify: `src/app/layout.tsx`, `src/components/Layout/ThemeRegistry.tsx` (remove MUI theme registry), `src/components/Layout/AppShell.tsx`
+- Create: `src/theme/fonts.ts`, `src/theme/GenreSkinProvider.tsx`, `src/theme/EmotionRegistry.tsx`
+- Modify: `src/app/layout.tsx`, `src/components/Layout/AppShell.tsx`
+- Delete: `src/components/Layout/ThemeRegistry.tsx` (MUI), `src/theme/theme.ts` (MUI `createTheme`)
 
 **Interfaces:**
 - Consumes: `SKINS`, `skinToCssVars` (Task 3); `useGridStore` genre.
-- Produces: `<GenreSkinProvider>` wraps app, sets CSS vars on a `<div data-genre>` from the active genre; `DISPLAY_FONTS: Record<Genre, string>` (CSS var names / className) and `bodyFont`.
+- Produces: `<EmotionRegistry>` (Emotion SSR cache for the App Router); `<GenreSkinProvider>` wraps app, sets CSS vars on a `<div data-genre>` from the active genre; `DISPLAY_FONT_CLASS: Record<Genre, string>` and `bodyFontClass`.
+
+**CRITICAL — Emotion + App Router SSR:** we're dropping MUI but keeping Emotion `styled()`. Emotion needs an App-Router-compatible registry or SSR won't flush styles (FOUC + hydration warnings). Create `src/theme/EmotionRegistry.tsx` (`'use client'`) using the standard pattern: a `createCache({ key: 'ni' })`, a `useServerInsertedHTML` that flushes `cache.inserted` as a `<style data-emotion>` tag, wrapping children in `<CacheProvider value={cache}>`. Wrap the app in `<EmotionRegistry>` inside `layout.tsx`. Verify no "style insertion" hydration warning and no unstyled flash.
 
 - [ ] **Step 1: Create `src/theme/fonts.ts`** using `next/font/google` — Inter for body, and one display face per genre (e.g. Trap → `Archivo` condensed heavy; Lo-Fi → `Fraunces`; House → `Space_Grotesk`; Drill → `Oswald`; Hyperpop → `Baloo_2`). Export `bodyFontClass` and `DISPLAY_FONT_CLASS: Record<Genre,string>`. (Exact faces may be refined with the design skills; keep the export shape.)
 
 - [ ] **Step 2: Create `src/theme/GenreSkinProvider.tsx`** (`'use client'`): reads `useGridStore(s=>s.genre)`, computes `skinToCssVars(SKINS[genre])`, renders `<div data-genre={genre} style={vars} className={DISPLAY_FONT_CLASS[genre]}>{children}</div>` with `transition` on color vars. Also apply `--genre-bg` to the wrapper background and min-height 100dvh.
 
-- [ ] **Step 3: Rewrite `src/app/layout.tsx`** to drop the MUI `ThemeRegistry`, apply `bodyFontClass` to `<body>`, set `metadata` (title/description with curly copy), and wrap children in `GenreSkinProvider`. Delete MUI-based `ThemeRegistry.tsx` (or gut it). `AppShell` becomes a thin Emotion wrapper.
+- [ ] **Step 3: Create `src/theme/EmotionRegistry.tsx`** (`'use client'`) — the App Router Emotion SSR registry (see the CRITICAL note above): `createCache({ key: 'ni' })`, `useServerInsertedHTML` flushing inserted styles into a `<style data-emotion>` tag, children wrapped in `<CacheProvider>`.
 
-- [ ] **Step 4: Verify build + dev render.**
+- [ ] **Step 4: Rewrite `src/app/layout.tsx`** — remove the MUI `ThemeRegistry` import/usage, apply `bodyFontClass` to `<body>`, set `metadata` (title/description with curly copy), and wrap children in `<EmotionRegistry><GenreSkinProvider>…`. Delete `src/components/Layout/ThemeRegistry.tsx` and `src/theme/theme.ts` (both MUI). `AppShell` becomes a thin Emotion wrapper (no MUI).
 
-Run: `npm run build` then `npm run dev`, load `/` — page renders with no MUI imports. Grep check: `grep -rn "@mui" src/ || echo "no MUI refs"` should print `no MUI refs` by end of Milestone 5 (some components still reference MUI until reskinned; acceptable now if `/` and `layout` are clean).
+- [ ] **Step 5: Verify build + SSR styling.**
 
-- [ ] **Step 5: Commit.**
+Run: `npm run build && npm run typecheck && npm run lint && npm test` (all green). Then `npm run dev`, load `/`: (a) page renders, (b) **no React hydration warning** in the console about style insertion, (c) no unstyled flash (view-source / initial HTML contains a `<style data-emotion>` tag). Note: `grep -rn "@mui" src/` will STILL show hits in un-reskinned components (removed across Milestone 5) — that is expected; only `layout.tsx`, `AppShell.tsx`, and the deleted files must be MUI-free now.
+
+- [ ] **Step 6: Commit.**
 
 ```bash
-git add src/theme/fonts.ts src/theme/GenreSkinProvider.tsx src/app/layout.tsx src/components/Layout
-git commit -m "feat: genre skin provider + display fonts, drop MUI theme registry
+git add src/theme/fonts.ts src/theme/GenreSkinProvider.tsx src/theme/EmotionRegistry.tsx src/app/layout.tsx src/components/Layout src/theme/theme.ts
+git rm src/components/Layout/ThemeRegistry.tsx src/theme/theme.ts
+git commit -m "feat: Emotion SSR registry, genre skin provider + display fonts; drop MUI theme registry
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
