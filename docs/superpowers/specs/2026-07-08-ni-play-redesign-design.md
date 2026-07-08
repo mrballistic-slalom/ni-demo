@@ -51,6 +51,9 @@ Kept, because they genuinely work client-side and deliver the payoff:
 | Audio | `Tone.Player` per track loading WAVs | **Hybrid: offline-rendered sample one-shots + Tone.js synth voices** (see §5) | Best result-to-effort; samples where they win, synthesis where it's the right tool. |
 | Deploy | Static export → GitHub Pages at `/ni-demo` | **Vercel, served at root** | Removes `basePath`/`assetPrefix` friction; unlocks dynamic OG images. |
 | Backend | Supabase | **None** | Client-only demo. |
+| Toolchain | Node (unpinned), mixed dep versions | **Node ≥ 24, all libraries upgraded to latest** | User request; `.nvmrc` + `engines` pin it; CI runs on Node 24. |
+
+Upgrading to latest pulls **Next.js 15 + React 19** (and latest Tone/Zustand/Emotion/framer-motion/TypeScript/ESLint). Since the app is being rebuilt, this is low marginal cost; the upgrade task fixes any React 19 / Next 15 breakages.
 
 **Removed deps:** `@mui/material`, `@mui/icons-material`, `nanoid`.
 **Added deps:** `lucide-react`. (Emotion, framer-motion, zustand, tone already present.)
@@ -62,7 +65,8 @@ Kept, because they genuinely work client-side and deliver the payoff:
 - Drop `output: 'export'`, `basePath`, `assetPrefix`, and `images: { unoptimized: true }` from `next.config.js`.
 - Remove the `NEXT_PUBLIC_BASE_PATH` env plumbing and the base-path prefixing in `getSoundUrl`.
 - Keep the Tone.js ESM webpack alias.
-- Replace `.github/workflows/deploy.yml` (GitHub Pages) with Vercel deployment. The Vercel CLI (v53.3.2) is installed locally, so deploys are driven from here (`vercel`, `vercel --prod`); the only manual step is a one-time `vercel login` (interactive — run via `! vercel login`).
+- The repo is **already connected to Vercel via Git integration**, so deploys happen automatically: pushing the `redesign/ni-play` branch produces a preview deploy, and merging to the default branch produces production. Remove the old `.github/workflows/deploy.yml` (GitHub Pages).
+- Add a **CI workflow** (`.github/workflows/ci.yml`) on **Node 24+** running `typecheck`, `test`, and `build` on push/PR — separate from Vercel's own build.
 - **Dynamic OG image:** a route (`app/beat/opengraph-image.tsx` or an `og` route handler) reads the URL-encoded beat and renders a branded preview (genre color, title, a mini render of the pattern) via `next/og`. No database needed.
 
 ---
@@ -236,4 +240,5 @@ Decodes the beat from the URL, loads that genre's skin, plays it, and shows a bo
 - **Offline render quality vs effort:** pure-Node DSP is fully self-contained but hand-written; a headless-browser Tone.js render may sound better per unit effort. Decide at milestone 3; both ship static files, so it's swappable without touching the app.
 - **Synth-voice polyphony/timing** on low-end mobile — keep voice counts modest; reuse voices.
 - **URL length** for 4-bar beats — use a compact encoding (bit-packed grid + short field codes), not raw JSON.
-- **Vercel setup:** CLI is installed but not authenticated — needs a one-time `! vercel login`; after that, deploys and project linking are driven from here.
+- **Deploy:** already connected to Vercel via Git integration — no CLI auth needed; pushes deploy automatically. CI on Node 24 guards typecheck/test/build independently.
+- **Next 15 / React 19 upgrade** may surface breakages (Emotion SSR, `next/font`, framer-motion). The upgrade task runs codemods and fixes them before feature work.
