@@ -46,17 +46,17 @@ Kept, because they genuinely work client-side and deliver the payoff:
 | Framework | Next.js 14 App Router | **Keep** | Solved deployment quirks; framework isn't the stale part. |
 | Styling | MUI v5 (`sx`/`styled`) | **Emotion `styled` + CSS-variable theming** | Bespoke per-genre skins fight Material defaults; Emotion is already a dep and gives full control. **No Tailwind** (standing rule). |
 | Icons | `@mui/icons-material` | **`lucide-react`** | Clean, tree-shakeable, matches a custom look. |
-| Animation | framer-motion (installed, unused) | **framer-motion** | Cell toggles, playhead, genre transitions. |
+| Animation | framer-motion (installed, unused) | **Motion** (`motion` / `motion/react`) | Current package for Framer Motion. Cell toggles, playhead, genre transitions. |
 | State | Zustand | **Keep** | Works; single source of truth. |
 | Audio | `Tone.Player` per track loading WAVs | **Hybrid: offline-rendered sample one-shots + Tone.js synth voices** (see §5) | Best result-to-effort; samples where they win, synthesis where it's the right tool. |
 | Deploy | Static export → GitHub Pages at `/ni-demo` | **Vercel, served at root** | Removes `basePath`/`assetPrefix` friction; unlocks dynamic OG images. |
 | Backend | Supabase | **None** | Client-only demo. |
 | Toolchain | Node (unpinned), mixed dep versions | **Node ≥ 24, all libraries upgraded to latest** | User request; `.nvmrc` + `engines` pin it; CI runs on Node 24. |
 
-Upgrading to latest pulls **Next.js 15 + React 19** (and latest Tone/Zustand/Emotion/framer-motion/TypeScript/ESLint). Since the app is being rebuilt, this is low marginal cost; the upgrade task fixes any React 19 / Next 15 breakages.
+Upgrading to latest pulls **Next.js 15 + React 19** (and latest Tone/Zustand/Emotion/Motion/TypeScript/ESLint). Since the app is being rebuilt, this is low marginal cost; the upgrade task fixes any React 19 / Next 15 breakages.
 
 **Removed deps:** `@mui/material`, `@mui/icons-material`, `nanoid`.
-**Added deps:** `lucide-react`. (Emotion, framer-motion, zustand, tone already present.)
+**Added deps:** `lucide-react`, `motion` (replaces `framer-motion`). (Emotion, zustand, tone already present.)
 
 ---
 
@@ -241,4 +241,4 @@ Decodes the beat from the URL, loads that genre's skin, plays it, and shows a bo
 - **Synth-voice polyphony/timing** on low-end mobile — keep voice counts modest; reuse voices.
 - **URL length** for 4-bar beats — use a compact encoding (bit-packed grid + short field codes), not raw JSON.
 - **Deploy:** already connected to Vercel via Git integration — no CLI auth needed; pushes deploy automatically. CI on Node 24 guards typecheck/test/build independently.
-- **Next 15 / React 19 upgrade** may surface breakages (Emotion SSR, `next/font`, framer-motion). The upgrade task runs codemods and fixes them before feature work.
+- **Next 15 / React 19 upgrade** may surface breakages (Emotion SSR, `next/font`, animation lib). The upgrade task runs codemods and fixes them before feature work.

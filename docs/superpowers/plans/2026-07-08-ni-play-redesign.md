@@ -4,9 +4,9 @@
 
 **Goal:** Rebuild NI Play as a zero-backend, per-genre-skinned browser beat toy with genuinely genre-distinct audio (offline-rendered drum one-shots + Tone.js synth voices), a landing explainer that flows into the genre picker, and Vercel deployment.
 
-**Architecture:** Next.js 14 App Router, static-friendly but deployed on Vercel (served at root). Zustand for state. Audio is a `Voice` abstraction: `SampleVoice` (Tone.Player over offline-rendered one-shots) for kick/snare/hihat/fx, `SynthVoice` (Tone.js instruments) for bass/melody. A `Tone.Sequence` triggers voices. Styling is Emotion `styled` + a CSS-custom-property skin system (one full skin per genre), animated with framer-motion. Share encodes the beat into the URL; export renders WAV via `OfflineAudioContext`.
+**Architecture:** Next.js 14 App Router, static-friendly but deployed on Vercel (served at root). Zustand for state. Audio is a `Voice` abstraction: `SampleVoice` (Tone.Player over offline-rendered one-shots) for kick/snare/hihat/fx, `SynthVoice` (Tone.js instruments) for bass/melody. A `Tone.Sequence` triggers voices. Styling is Emotion `styled` + a CSS-custom-property skin system (one full skin per genre), animated with Motion (the `motion` package, imported from `motion/react` — the current name for Framer Motion). Share encodes the beat into the URL; export renders WAV via `OfflineAudioContext`.
 
-**Tech Stack:** Next.js 14, React 18, TypeScript, Emotion (`@emotion/styled`, `@emotion/react`), framer-motion, lucide-react, Zustand, Tone.js, `next/font`, Vercel CLI.
+**Tech Stack:** Next.js 15, React 19, TypeScript, Emotion (`@emotion/styled`, `@emotion/react`), Motion (`motion` / `motion/react`), lucide-react, Zustand, Tone.js, `next/font`, Vercel (Git integration).
 
 ## Global Constraints
 
@@ -19,7 +19,7 @@
 - **iOS audio:** `Tone.start()` must be called inside a real user gesture (the first genre tap). Resume `AudioContext` on `visibilitychange`.
 - **Tone.js** for all audio; no raw Web Audio API except the `OfflineAudioContext` render in the exporter.
 - **Commit after every task.** Conventional commit messages. End commit messages with the `Co-Authored-By` trailer.
-- **Toolchain:** Node **≥ 24** (`.nvmrc` + `package.json` `engines`). All libraries upgraded to latest — this means **Next.js 15 + React 19**, plus latest Tone/Zustand/Emotion/framer-motion/TypeScript/ESLint/lucide-react.
+- **Toolchain:** Node **≥ 24** (`.nvmrc` + `package.json` `engines`). All libraries upgraded to latest — this means **Next.js 15 + React 19**, plus latest Tone/Zustand/Emotion/Motion (`motion`)/TypeScript/ESLint/lucide-react.
 - **Deploy target:** Vercel, at root (no `basePath`), **already connected via Git integration** — pushes deploy automatically; no CLI auth. CI (GitHub Actions, Node 24) runs typecheck/test/build on push/PR.
 
 ---
@@ -96,7 +96,7 @@ The pure-logic modules (`beatCodec`, `grid`, WAV encoding, voice-spec constructi
 
 ```bash
 npm install next@latest react@latest react-dom@latest
-npm install tone@latest zustand@latest framer-motion@latest @emotion/react@latest @emotion/styled@latest
+npm install tone@latest zustand@latest motion@latest @emotion/react@latest @emotion/styled@latest
 npm install -D typescript@latest eslint@latest eslint-config-next@latest @types/node@latest @types/react@latest @types/react-dom@latest
 ```
 
@@ -176,12 +176,12 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - [ ] **Step 1: Swap deps (core already upgraded to latest in T0.1).** Remove MUI + nanoid, add the new libs at latest — take whatever `@latest` resolves:
 
 ```bash
-npm uninstall @mui/material @mui/icons-material nanoid
-npm install lucide-react@latest
+npm uninstall @mui/material @mui/icons-material nanoid framer-motion
+npm install lucide-react@latest motion@latest
 npm install -D vitest@latest @vitest/ui@latest jsdom@latest @testing-library/react@latest @testing-library/jest-dom@latest
 ```
 
-Then add scripts to `package.json`: `"test": "vitest run"`, `"test:watch": "vitest"`.
+Note: T0.1 installed `framer-motion`; swap it for `motion` here (the current package name for Framer Motion — imports become `import { motion, AnimatePresence } from 'motion/react'`). Then add scripts to `package.json`: `"test": "vitest run"`, `"test:watch": "vitest"`.
 
 - [ ] **Step 2: Create `vitest.config.ts`:**
 
@@ -712,7 +712,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 **Files:** Create `src/components/common/BottomSheet.tsx`, `IconButton.tsx`, `Fader.tsx`.
 
-- [ ] **Step 1:** Build accessible, skin-aware replacements for the MUI primitives currently used (Dialog/Drawer/IconButton/Slider). `BottomSheet`: fixed-bottom sheet with backdrop, drag/swipe-to-dismiss (framer-motion), focus trap, `role="dialog"`. `IconButton`: 44px hit area, `lucide-react` icon. `Fader`: accessible range input styled per skin.
+- [ ] **Step 1:** Build accessible, skin-aware replacements for the MUI primitives currently used (Dialog/Drawer/IconButton/Slider). `BottomSheet`: fixed-bottom sheet with backdrop, drag/swipe-to-dismiss (Motion, `motion/react`), focus trap, `role="dialog"`. `IconButton`: 44px hit area, `lucide-react` icon. `Fader`: accessible range input styled per skin.
 - [ ] **Step 2:** Verify render in a scratch story or the studio. Screenshot.
 - [ ] **Step 3:** Commit `feat: Emotion UI primitives to replace MUI`.
 
@@ -720,7 +720,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 **Files:** Modify `src/components/Grid/StepGrid.tsx`, `GridCell.tsx`; create `src/components/Grid/Playhead.tsx`.
 
-- [ ] **Step 1:** Rewrite in Emotion. Cells read `var(--genre-cell-on/off)`, `--genre-cell-radius/gap`, `--genre-glow`. Active cells bloom; a cell **pops** (`scale` to `skin.motion.hitPop`) when `currentStep === step` and it's active (framer-motion). Instrument rows get a `lucide-react` icon + label. Beat markers every 4 steps.
+- [ ] **Step 1:** Rewrite in Emotion. Cells read `var(--genre-cell-on/off)`, `--genre-cell-radius/gap`, `--genre-glow`. Active cells bloom; a cell **pops** (`scale` to `skin.motion.hitPop`) when `currentStep === step` and it's active (Motion, `motion/react`). Instrument rows get a `lucide-react` icon + label. Beat markers every 4 steps.
 - [ ] **Step 2:** Add `Playhead` overlay: an absolutely-positioned light beam that animates across columns bound to `currentStep`, blurred per `--genre-glow-blur`.
 - [ ] **Step 3:** Keep `React.memo` on `GridCell`; ensure only the passing cell re-renders (pass `isPlayhead` minimally).
 - [ ] **Step 4:** Verify at 375px + desktop for all 5 skins. Screenshot each. Confirm 44px targets.
@@ -751,7 +751,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 **Files:** Create `src/components/Landing/Hero.tsx`, `HowItWorks.tsx`; modify `src/app/page.tsx`.
 
-- [ ] **Step 1:** Hero: wordmark, curly-punctuation pitch, a looping animated mini-grid preview (framer-motion, no audio until gesture), primary CTA "Pick your sound" that scrolls to the picker. HowItWorks: three icon beats — pick a genre → tap the squares → share it.
+- [ ] **Step 1:** Hero: wordmark, curly-punctuation pitch, a looping animated mini-grid preview (Motion, `motion/react`, no audio until gesture), primary CTA "Pick your sound" that scrolls to the picker. HowItWorks: three icon beats — pick a genre → tap the squares → share it.
 - [ ] **Step 2:** `page.tsx` composes Hero → HowItWorks → GenrePicker in one scroll. `localStorage` flag `ni_seen_hero` collapses Hero to a compact header on repeat visits.
 - [ ] **Step 3:** Invoke `ui-ux-pro-max` + `impeccable` for finish. Verify at 375px; screenshot. Commit `feat: landing hero + how-it-works explainer`.
 
@@ -759,7 +759,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 **Files:** Create `src/components/Landing/GenrePicker.tsx`; delete `src/components/GenreSelect/GenreSelect.tsx`.
 
-- [ ] **Step 1:** Five cards, each rendered in its own skin (own color, display font, tagline, and a shimmering signature-pattern mini-equalizer). Tap → `initAudio()` (must be inside the click handler for iOS) → `setGenre()` → navigate to `/studio` with a framer-motion morph.
+- [ ] **Step 1:** Five cards, each rendered in its own skin (own color, display font, tagline, and a shimmering signature-pattern mini-equalizer). Tap → `initAudio()` (must be inside the click handler for iOS) → `setGenre()` → navigate to `/studio` with a Motion (`motion/react`) morph.
 - [ ] **Step 2:** Verify each card visually distinct; tap flows into studio in-genre; audio unlocks on iOS (test in mobile Safari or responsive + note limitation). Screenshot. Commit `feat: skinned genre picker with morph into studio`.
 
 ---
