@@ -173,15 +173,17 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 **Interfaces:**
 - Produces: `npm test` runs Vitest; `lucide-react` available; MUI/nanoid gone from manifest.
 
-- [ ] **Step 1: Swap deps (core already upgraded to latest in T0.1).** Remove MUI + nanoid, add the new libs at latest — take whatever `@latest` resolves:
+- [ ] **Step 1: Add new deps + swap framer-motion→motion (ADD-ONLY; do NOT remove MUI or nanoid yet).** Take whatever `@latest` resolves:
 
 ```bash
-npm uninstall @mui/material @mui/icons-material nanoid framer-motion
+npm uninstall framer-motion
 npm install lucide-react@latest motion@latest
 npm install -D vitest@latest @vitest/ui@latest jsdom@latest @testing-library/react@latest @testing-library/jest-dom@latest
 ```
 
-Note: T0.1 installed `framer-motion`; swap it for `motion` here (the current package name for Framer Motion — imports become `import { motion, AnimatePresence } from 'motion/react'`). Then add scripts to `package.json`: `"test": "vitest run"`, `"test:watch": "vitest"`.
+Then add scripts to `package.json`: `"test": "vitest run"`, `"test:watch": "vitest"`.
+
+**CRITICAL sequencing note:** Do NOT `npm uninstall @mui/material @mui/icons-material` or `nanoid` in this task. Components and `ShareModal` still import them; removing the deps now breaks `npm run build` for the entire middle of the project and fails CI on every milestone branch. `framer-motion` is safe to remove because nothing imports it yet (it was an unused dependency). MUI is uninstalled in **Task 22** (after all components are de-MUI'd); `nanoid` is uninstalled in **Task 20** (after the share-id logic is replaced). This task must leave `npm run build` green with MUI still installed.
 
 - [ ] **Step 2: Create `vitest.config.ts`:**
 
@@ -207,8 +209,8 @@ import '@testing-library/jest-dom/vitest';
 
 - [ ] **Step 4: Install and verify.**
 
-Run: `npm install && npm test`
-Expected: install succeeds; Vitest runs and reports "No test files found" (exit 0) or passes.
+Run: `npm install && npm test && npm run build`
+Expected: install succeeds; Vitest runs and reports "No test files found" (exit 0) or passes; **`npm run build` stays green with MUI still installed** (confirms the add-only swap didn't break anything). If `npm run build` fails because something imported `framer-motion`, restore it — but per the plan it is unused, so this should not happen.
 
 - [ ] **Step 5: Commit.**
 
@@ -832,7 +834,7 @@ describe('beatCodec', () => {
 
 **Files:** Delete `src/app/dashboard/page.tsx`, any `useProjectStore`/auth remnants tied to Supabase, `useAuthStore` if present.
 
-- [ ] **Step 1:** `grep -rn "@mui\|nanoid\|supabase" src/` → must be empty. Remove any hits. **Step 2:** Delete dashboard + dead stores; fix imports. **Step 3:** `npm run typecheck && npm test && npm run build` all green. **Step 4:** Commit `chore: remove dead backend/MUI code`.
+- [ ] **Step 1:** `grep -rn "@mui\|nanoid\|supabase" src/` → must be empty. Remove any hits. **Step 2:** Delete dashboard + dead stores; fix imports. **Step 3:** Now that no source imports remain, uninstall the deferred deps: `npm uninstall @mui/material @mui/icons-material nanoid` (these were intentionally kept installed since Task 1 so the build stayed green mid-project; nanoid's usage was removed in Task 20, MUI's across Milestone 5). **Step 4:** `npm run typecheck && npm test && npm run build` all green; re-run `grep -rn "@mui\|nanoid" package.json` → empty. **Step 5:** Commit `chore: remove dead backend/MUI code and deps`.
 
 ### Task 23: Motion character, textures, first-run hint, a11y
 
