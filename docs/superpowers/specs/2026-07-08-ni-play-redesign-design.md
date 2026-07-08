@@ -53,7 +53,7 @@ Kept, because they genuinely work client-side and deliver the payoff:
 | Backend | Supabase | **None** | Client-only demo. |
 | Toolchain | Node (unpinned), mixed dep versions | **Node ≥ 24, all libraries upgraded to latest** | User request; `.nvmrc` + `engines` pin it; CI runs on Node 24. |
 
-Upgrading to latest pulls **Next.js 16 (Turbopack) + React 19** (and latest Tone/Zustand/Emotion/Motion). **TypeScript stays at 5.9.3 and ESLint at 9.x** — a spike (`docs/superpowers/spike-next16-ts7.md`) confirmed TS 7's native compiler ships no programmatic API, breaking Next's type step and `@typescript-eslint`. Next 16 works once the legacy webpack Tone alias is dropped (Tone is async-imported; Turbopack bundles its ESM natively).
+Upgrading to latest pulls **Next.js 16 (Turbopack) + React 19 + TypeScript 6.0.3** (and latest Tone/Zustand/Emotion/Motion). **TypeScript is 6.0.3** — the newest JS-based line, within `typescript-eslint`'s `<6.1.0` peer range. **TS 7.x is rejected**: a spike (`docs/superpowers/spike-next16-ts7.md`) confirmed its native compiler ships no programmatic API, breaking Next's type step and `@typescript-eslint`; ESLint stays at 9.x. Next 16 works once the legacy webpack Tone alias is dropped (Tone is async-imported; Turbopack bundles its ESM natively).
 
 **Removed deps:** `@mui/material`, `@mui/icons-material`, `nanoid`.
 **Added deps:** `lucide-react`, `motion` (replaces `framer-motion`). (Emotion, zustand, tone already present.)
