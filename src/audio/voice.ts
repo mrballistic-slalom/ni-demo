@@ -17,7 +17,7 @@ export interface Voice {
    * @param velocity - Optional velocity/gain, reserved for future use.
    */
   trigger(time: number, note?: string | null, velocity?: number): void;
-  /** The underlying Tone.js node, pre-connected to the destination. */
+  /** The underlying Tone.js node, left unconnected — the owner (synthKit) routes it output → gain → destination. */
   output: unknown;
   /** Releases underlying Tone.js resources. */
   dispose(): void;
@@ -30,11 +30,12 @@ export interface Voice {
  * Notes are ignored since sample playback has a fixed pitch.
  */
 class SampleVoice implements Voice {
-  private player: ReturnType<import('tone').Player['toDestination']>;
+  private player: import('tone').Player;
 
   constructor(spec: SampleVoiceSpec) {
     const Tone = getTone();
-    this.player = new Tone.Player(spec.url).toDestination();
+    // Left unconnected; synthKit routes output → per-track gain → destination.
+    this.player = new Tone.Player(spec.url);
   }
 
   trigger(time: number): void {
@@ -87,7 +88,8 @@ class SynthVoice implements Voice {
       default:
         throw new Error(`Unknown synth kind: ${spec.synth as string}`);
     }
-    this.synth = instance.toDestination();
+    // Left unconnected; synthKit routes output → per-track gain → destination.
+    this.synth = instance;
   }
 
   trigger(time: number, note?: string | null, velocity?: number): void {
