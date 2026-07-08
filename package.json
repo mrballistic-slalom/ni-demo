@@ -11,14 +11,17 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "generate-sounds": "node scripts/generateSounds.mjs"
+    "generate-sounds": "node scripts/generateSounds.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^5.15.0",
     "@mui/material": "^5.15.0",
-    "framer-motion": "^12.42.2",
+    "lucide-react": "^1.23.0",
+    "motion": "^12.42.2",
     "nanoid": "^5.0.0",
     "next": "^15.5.20",
     "react": "^19.2.7",
@@ -27,13 +30,18 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.56.0",
     "@typescript-eslint/parser": "^8.56.0",
+    "@vitest/ui": "^4.1.10",
     "eslint": "^9.39.4",
     "eslint-config-next": "^15.5.20",
-    "typescript": "^5.9.3"
+    "jsdom": "^29.1.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }
