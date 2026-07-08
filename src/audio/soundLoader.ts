@@ -1,27 +1,27 @@
-import { TrackCategory, TRACK_ORDER } from '@/types';
+import { TrackCategory } from '@/types';
 import { useGridStore } from '@/stores/useGridStore';
+import { GENRES } from '@/data/genres';
 import { getSound, getSoundUrl } from '@/data/sounds';
 import { loadSound } from './sequencer';
+import { buildKit } from './synthKit';
 
 /**
- * Loads audio samples for all tracks based on the current sound assignments
- * in the grid store. Loads are performed in parallel.
+ * Loads audio for the current genre's kit based on the grid store's current
+ * genre selection. If the genre defines a `kit` (per-track `VoiceSpec`s),
+ * builds it via {@link buildKit}. Genres without a kit yet (pre-Task-10) are
+ * a no-op — the engine simply has nothing to play until kits are populated.
  */
 export async function loadAllSounds(): Promise<void> {
-  const { sounds } = useGridStore.getState();
-  const loadPromises: Promise<void>[] = [];
+  const { genre } = useGridStore.getState();
+  const kit = GENRES[genre].kit;
+  if (!kit) return;
 
-  for (const track of TRACK_ORDER) {
-    const soundId = sounds[track];
-    const soundDef = getSound(soundId);
-    if (soundDef) {
-      const url = getSoundUrl(soundDef);
-      loadPromises.push(loadSound(track, url));
-    }
-  }
-
-  await Promise.all(loadPromises);
+  await buildKit(kit);
 }
+
+// TODO(Task 9): swapSound + catalog-derived kit — reframe below to resolve
+// SoundVariant.spec from the catalog instead of the legacy file-based
+// SoundDefinition, once `getSound` returns SoundVariant.
 
 /**
  * Replaces the sound for a single track by loading the new sample and
