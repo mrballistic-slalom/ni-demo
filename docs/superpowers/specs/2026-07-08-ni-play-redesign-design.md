@@ -167,7 +167,13 @@ The Sound Browser swaps variants uniformly regardless of whether the variant is 
 ## 6. Screens & components
 
 ### Landing (`/`)
-The genre picker is *the* moment. Five large cards, each in its own skin: its color, its display font, its tagline, and its signature pattern shimmering as a mini animated equalizer/preview. Confident wordmark. Tapping a card → `initAudio()` (satisfies iOS gesture requirement) → `setGenre()` → transitions into `/studio` with the whole app morphing into that genre's skin.
+One page, two acts — an explainer that flows straight into the picker. No one is dropped cold into a grid.
+
+**Act 1 — Hero / explainer (first view).** Confident wordmark and a one-line pitch ("Make a beat in your browser. No app, no account, no clue required."). A live, autoplaying-muted-until-tapped mini demo of the grid grooving (or a looping animated preview) so the concept is instantly legible. A tight "how it works" in three beats — *pick a genre → tap the squares → share it* — using icons, not paragraphs. A single primary CTA ("Pick your sound") that scrolls/reveals Act 2. Fast and on-brand; a hero, not a bloated marketing site.
+
+**Act 2 — Genre picker (*the* moment).** Five large cards, each in its own skin: its color, its display font, its tagline, and its signature pattern shimmering as a mini animated equalizer/preview. Tapping a card → `initAudio()` (satisfies the iOS gesture requirement — the first tap must be a real user gesture) → `setGenre()` → transitions into `/studio` with the whole app morphing into that genre's skin.
+
+Returning/deep-link visitors can skip to the picker; a `localStorage` flag can collapse the hero to a compact header on repeat visits so it never nags.
 
 ### Studio (`/studio`)
 - **Header:** back, genre wordmark (skinned), and the real actions — Share, Export. (Save removed.)
@@ -207,7 +213,7 @@ Decodes the beat from the URL, loads that genre's skin, plays it, and shows a bo
 3. **Offline render script:** `renderSounds.mjs`; generate the real one-shots; wire `SampleVoice` to them.
 4. **Genre data:** identities, skins, kits, note rows, templates for all 5.
 5. **Studio UI:** grid hero (tactile cells, pulse, beam playhead), transport, track controls, sound browser — all skinned + animated.
-6. **Landing:** skinned genre cards with live previews + morph transition.
+6. **Landing:** hero/explainer (pitch, live mini-demo, three-beat "how it works", CTA) flowing into skinned genre cards with live previews + morph transition into the studio.
 7. **Share + Export + `/beat`:** URL encode/decode, WAV export, OG image.
 8. **Polish:** per-genre motion character, textures, first-run hint, mobile pass at 375px, accessibility (touch targets, contrast, reduced-motion).
 
