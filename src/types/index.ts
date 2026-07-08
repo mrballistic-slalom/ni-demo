@@ -63,6 +63,30 @@ export interface SoundDefinition {
   file_aac: string;
 }
 
+export type NoteRow = (string | null)[]; // length 16; note name (e.g. 'C2') or null
+
+export interface SampleVoiceSpec {
+  kind: 'sample';
+  url: string;          // resolved via getSoundUrl
+}
+export interface SynthVoiceSpec {
+  kind: 'synth';
+  synth: 'mono808' | 'fm' | 'poly';
+  options: Record<string, unknown>; // Tone synth options
+  portamento?: number;
+}
+export type VoiceSpec = SampleVoiceSpec | SynthVoiceSpec;
+
+export type GenreKit = Record<TrackCategory, VoiceSpec>;
+
+export interface SoundVariant {
+  id: string;
+  name: string;
+  category: TrackCategory;
+  genre: Genre;
+  spec: VoiceSpec;
+}
+
 /** Complete definition of a genre including display info, BPM range, colors, and default template. */
 export interface GenreDefinition {
   id: Genre;
@@ -74,6 +98,10 @@ export interface GenreDefinition {
   colorSecondary: string;
   colorAccent: string;
   template: GenreTemplate;
+  kit?: GenreKit;
+  noteRows?: { melody: NoteRow; bass: NoteRow };
+  tagline?: string;
+  hook?: string;
 }
 
 /** Default grid pattern, sound selections, and volumes for a genre preset. */
