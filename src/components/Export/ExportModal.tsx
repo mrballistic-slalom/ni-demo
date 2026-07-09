@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import { Download, Loader2 } from 'lucide-react';
 import BottomSheet from '@/components/common/BottomSheet';
@@ -88,6 +88,14 @@ export default function ExportModal({ open, onClose }: ExportModalProps) {
   const genre = useGridStore((s) => s.genre);
   const bpm = useGridStore((s) => s.bpm);
   const title = useProjectStore((s) => s.currentTitle);
+
+  // The sheet stays mounted (only `open` toggles) so a failed export's error
+  // and any in-flight progress must be cleared whenever the sheet closes or
+  // reopens, or the next open would show a stale error/spinner.
+  useEffect(() => {
+    setError(null);
+    setExporting(false);
+  }, [open]);
 
   const handleExport = useCallback(async () => {
     setExporting(true);
