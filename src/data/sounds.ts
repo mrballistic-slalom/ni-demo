@@ -1,140 +1,256 @@
-import { SoundDefinition, Genre, TrackCategory } from '@/types';
+import { SoundVariant, Genre, TrackCategory, VoiceSpec } from '@/types';
 
-/** Complete catalog of all available sound samples across all genres and categories. */
-export const SOUND_CATALOG: SoundDefinition[] = [
+/**
+ * Builds the three sample-backed variants for a percussive/fx category
+ * (kick, snare, hihat, fx), pointing at the genre-distinct one-shot WAVs
+ * rendered by `scripts/renderSounds.mjs` (Task 9a) at
+ * `/sounds/<genre>/<genre>_<category>_<nn>.wav`.
+ */
+function sampleVariants(
+  genre: Genre,
+  category: TrackCategory,
+  names: [string, string, string]
+): SoundVariant[] {
+  return names.map((name, i) => {
+    const nn = String(i + 1).padStart(2, '0');
+    const id = `${genre}_${category}_${nn}`;
+    return {
+      id,
+      name,
+      category,
+      genre,
+      spec: { kind: 'sample', url: `/sounds/${genre}/${genre}_${category}_${nn}.wav` },
+    };
+  });
+}
+
+/** Builds a single synth-backed melody or bass variant. */
+function synthVariant(
+  genre: Genre,
+  category: 'melody' | 'bass',
+  nn: string,
+  name: string,
+  spec: VoiceSpec
+): SoundVariant {
+  return { id: `${genre}_${category}_${nn}`, name, category, genre, spec };
+}
+
+/** Complete catalog of all selectable sounds across every genre and track category. */
+export const SOUND_CATALOG: SoundVariant[] = [
   // ── Trap ──────────────────────────────────────────────────
-  { id: 'trap_kick_01', name: 'Trap Deep Kick', category: 'kick', genre: 'trap', file_ogg: '/sounds/trap/trap_kick_01.wav', file_aac: '/sounds/trap/trap_kick_01.wav' },
-  { id: 'trap_kick_02', name: 'Trap Punchy Kick', category: 'kick', genre: 'trap', file_ogg: '/sounds/trap/trap_kick_02.wav', file_aac: '/sounds/trap/trap_kick_02.wav' },
-  { id: 'trap_kick_03', name: 'Trap Tight Kick', category: 'kick', genre: 'trap', file_ogg: '/sounds/trap/trap_kick_03.wav', file_aac: '/sounds/trap/trap_kick_03.wav' },
-  { id: 'trap_snare_01', name: 'Trap Crack Snare', category: 'snare', genre: 'trap', file_ogg: '/sounds/trap/trap_snare_01.wav', file_aac: '/sounds/trap/trap_snare_01.wav' },
-  { id: 'trap_snare_02', name: 'Trap Rim Snare', category: 'snare', genre: 'trap', file_ogg: '/sounds/trap/trap_snare_02.wav', file_aac: '/sounds/trap/trap_snare_02.wav' },
-  { id: 'trap_snare_03', name: 'Trap Soft Snare', category: 'snare', genre: 'trap', file_ogg: '/sounds/trap/trap_snare_03.wav', file_aac: '/sounds/trap/trap_snare_03.wav' },
-  { id: 'trap_hihat_01', name: 'Trap Closed Hat', category: 'hihat', genre: 'trap', file_ogg: '/sounds/trap/trap_hihat_01.wav', file_aac: '/sounds/trap/trap_hihat_01.wav' },
-  { id: 'trap_hihat_02', name: 'Trap Open Hat', category: 'hihat', genre: 'trap', file_ogg: '/sounds/trap/trap_hihat_02.wav', file_aac: '/sounds/trap/trap_hihat_02.wav' },
-  { id: 'trap_hihat_03', name: 'Trap Pedal Hat', category: 'hihat', genre: 'trap', file_ogg: '/sounds/trap/trap_hihat_03.wav', file_aac: '/sounds/trap/trap_hihat_03.wav' },
-  { id: 'trap_melody_01', name: 'Trap Dark Pad', category: 'melody', genre: 'trap', file_ogg: '/sounds/trap/trap_melody_01.wav', file_aac: '/sounds/trap/trap_melody_01.wav' },
-  { id: 'trap_melody_02', name: 'Trap Bright Keys', category: 'melody', genre: 'trap', file_ogg: '/sounds/trap/trap_melody_02.wav', file_aac: '/sounds/trap/trap_melody_02.wav' },
-  { id: 'trap_melody_03', name: 'Trap Soft Pluck', category: 'melody', genre: 'trap', file_ogg: '/sounds/trap/trap_melody_03.wav', file_aac: '/sounds/trap/trap_melody_03.wav' },
-  { id: 'trap_bass_01', name: 'Trap Deep Bass', category: 'bass', genre: 'trap', file_ogg: '/sounds/trap/trap_bass_01.wav', file_aac: '/sounds/trap/trap_bass_01.wav' },
-  { id: 'trap_bass_02', name: 'Trap Sub Bass', category: 'bass', genre: 'trap', file_ogg: '/sounds/trap/trap_bass_02.wav', file_aac: '/sounds/trap/trap_bass_02.wav' },
-  { id: 'trap_bass_03', name: 'Trap Round Bass', category: 'bass', genre: 'trap', file_ogg: '/sounds/trap/trap_bass_03.wav', file_aac: '/sounds/trap/trap_bass_03.wav' },
-  { id: 'trap_fx_01', name: 'Trap Riser', category: 'fx', genre: 'trap', file_ogg: '/sounds/trap/trap_fx_01.wav', file_aac: '/sounds/trap/trap_fx_01.wav' },
-  { id: 'trap_fx_02', name: 'Trap Impact', category: 'fx', genre: 'trap', file_ogg: '/sounds/trap/trap_fx_02.wav', file_aac: '/sounds/trap/trap_fx_02.wav' },
-  { id: 'trap_fx_03', name: 'Trap Sweep', category: 'fx', genre: 'trap', file_ogg: '/sounds/trap/trap_fx_03.wav', file_aac: '/sounds/trap/trap_fx_03.wav' },
+  ...sampleVariants('trap', 'kick', ['Trap Deep Kick', 'Trap Punchy Kick', 'Trap Tight Kick']),
+  ...sampleVariants('trap', 'snare', ['Trap Crack Snare', 'Trap Rim Snare', 'Trap Soft Snare']),
+  ...sampleVariants('trap', 'hihat', ['Trap Closed Hat', 'Trap Open Hat', 'Trap Pedal Hat']),
+  ...sampleVariants('trap', 'fx', ['Trap Riser', 'Trap Impact', 'Trap Sweep']),
+  synthVariant('trap', 'melody', '01', 'Trap Dark Pad', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'triangle' }, envelope: { attack: 0.4, decay: 0.3, sustain: 0.6, release: 1.5 } },
+  }),
+  synthVariant('trap', 'melody', '02', 'Trap Bright Keys', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.6 } },
+  }),
+  synthVariant('trap', 'melody', '03', 'Trap Soft Pluck', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.005, decay: 0.15, sustain: 0.05, release: 0.3 } },
+  }),
+  synthVariant('trap', 'bass', '01', 'Trap Deep 808', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.8, release: 1.2 } },
+    portamento: 0.08,
+  }),
+  synthVariant('trap', 'bass', '02', 'Trap Sub 808', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.9, release: 1.5 } },
+    portamento: 0.12,
+  }),
+  synthVariant('trap', 'bass', '03', 'Trap Round Bass', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.25, sustain: 0.6, release: 0.9 } },
+    portamento: 0.05,
+  }),
 
   // ── Lo-fi ─────────────────────────────────────────────────
-  { id: 'lofi_kick_01', name: 'Lo-fi Deep Kick', category: 'kick', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_kick_01.wav', file_aac: '/sounds/lofi/lofi_kick_01.wav' },
-  { id: 'lofi_kick_02', name: 'Lo-fi Punchy Kick', category: 'kick', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_kick_02.wav', file_aac: '/sounds/lofi/lofi_kick_02.wav' },
-  { id: 'lofi_kick_03', name: 'Lo-fi Tight Kick', category: 'kick', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_kick_03.wav', file_aac: '/sounds/lofi/lofi_kick_03.wav' },
-  { id: 'lofi_snare_01', name: 'Lo-fi Crack Snare', category: 'snare', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_snare_01.wav', file_aac: '/sounds/lofi/lofi_snare_01.wav' },
-  { id: 'lofi_snare_02', name: 'Lo-fi Rim Snare', category: 'snare', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_snare_02.wav', file_aac: '/sounds/lofi/lofi_snare_02.wav' },
-  { id: 'lofi_snare_03', name: 'Lo-fi Soft Snare', category: 'snare', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_snare_03.wav', file_aac: '/sounds/lofi/lofi_snare_03.wav' },
-  { id: 'lofi_hihat_01', name: 'Lo-fi Closed Hat', category: 'hihat', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_hihat_01.wav', file_aac: '/sounds/lofi/lofi_hihat_01.wav' },
-  { id: 'lofi_hihat_02', name: 'Lo-fi Open Hat', category: 'hihat', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_hihat_02.wav', file_aac: '/sounds/lofi/lofi_hihat_02.wav' },
-  { id: 'lofi_hihat_03', name: 'Lo-fi Pedal Hat', category: 'hihat', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_hihat_03.wav', file_aac: '/sounds/lofi/lofi_hihat_03.wav' },
-  { id: 'lofi_melody_01', name: 'Lo-fi Dark Pad', category: 'melody', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_melody_01.wav', file_aac: '/sounds/lofi/lofi_melody_01.wav' },
-  { id: 'lofi_melody_02', name: 'Lo-fi Bright Keys', category: 'melody', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_melody_02.wav', file_aac: '/sounds/lofi/lofi_melody_02.wav' },
-  { id: 'lofi_melody_03', name: 'Lo-fi Soft Pluck', category: 'melody', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_melody_03.wav', file_aac: '/sounds/lofi/lofi_melody_03.wav' },
-  { id: 'lofi_bass_01', name: 'Lo-fi Deep Bass', category: 'bass', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_bass_01.wav', file_aac: '/sounds/lofi/lofi_bass_01.wav' },
-  { id: 'lofi_bass_02', name: 'Lo-fi Sub Bass', category: 'bass', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_bass_02.wav', file_aac: '/sounds/lofi/lofi_bass_02.wav' },
-  { id: 'lofi_bass_03', name: 'Lo-fi Round Bass', category: 'bass', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_bass_03.wav', file_aac: '/sounds/lofi/lofi_bass_03.wav' },
-  { id: 'lofi_fx_01', name: 'Lo-fi Riser', category: 'fx', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_fx_01.wav', file_aac: '/sounds/lofi/lofi_fx_01.wav' },
-  { id: 'lofi_fx_02', name: 'Lo-fi Impact', category: 'fx', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_fx_02.wav', file_aac: '/sounds/lofi/lofi_fx_02.wav' },
-  { id: 'lofi_fx_03', name: 'Lo-fi Sweep', category: 'fx', genre: 'lofi', file_ogg: '/sounds/lofi/lofi_fx_03.wav', file_aac: '/sounds/lofi/lofi_fx_03.wav' },
+  ...sampleVariants('lofi', 'kick', ['Lo-fi Deep Kick', 'Lo-fi Punchy Kick', 'Lo-fi Tight Kick']),
+  ...sampleVariants('lofi', 'snare', ['Lo-fi Crack Snare', 'Lo-fi Rim Snare', 'Lo-fi Soft Snare']),
+  ...sampleVariants('lofi', 'hihat', ['Lo-fi Closed Hat', 'Lo-fi Open Hat', 'Lo-fi Pedal Hat']),
+  ...sampleVariants('lofi', 'fx', ['Lo-fi Riser', 'Lo-fi Impact', 'Lo-fi Sweep']),
+  synthVariant('lofi', 'melody', '01', 'Lo-fi Warm Rhodes', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.05, decay: 0.4, sustain: 0.5, release: 2.0 } },
+  }),
+  synthVariant('lofi', 'melody', '02', 'Lo-fi Dusty Keys', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.3, sustain: 0.4, release: 1.4 } },
+  }),
+  synthVariant('lofi', 'melody', '03', 'Lo-fi Mellow Pluck', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.25, sustain: 0.1, release: 0.8 } },
+  }),
+  synthVariant('lofi', 'bass', '01', 'Lo-fi Deep Bass', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.03, decay: 0.3, sustain: 0.7, release: 1.2 } },
+    portamento: 0.02,
+  }),
+  synthVariant('lofi', 'bass', '02', 'Lo-fi Sub Bass', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.02, decay: 0.25, sustain: 0.85, release: 1.6 } },
+  }),
+  synthVariant('lofi', 'bass', '03', 'Lo-fi Round Bass', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'triangle' }, envelope: { attack: 0.04, decay: 0.3, sustain: 0.6, release: 1.0 } },
+  }),
 
   // ── House ─────────────────────────────────────────────────
-  { id: 'house_kick_01', name: 'House Deep Kick', category: 'kick', genre: 'house', file_ogg: '/sounds/house/house_kick_01.wav', file_aac: '/sounds/house/house_kick_01.wav' },
-  { id: 'house_kick_02', name: 'House Punchy Kick', category: 'kick', genre: 'house', file_ogg: '/sounds/house/house_kick_02.wav', file_aac: '/sounds/house/house_kick_02.wav' },
-  { id: 'house_kick_03', name: 'House Tight Kick', category: 'kick', genre: 'house', file_ogg: '/sounds/house/house_kick_03.wav', file_aac: '/sounds/house/house_kick_03.wav' },
-  { id: 'house_snare_01', name: 'House Crack Snare', category: 'snare', genre: 'house', file_ogg: '/sounds/house/house_snare_01.wav', file_aac: '/sounds/house/house_snare_01.wav' },
-  { id: 'house_snare_02', name: 'House Rim Snare', category: 'snare', genre: 'house', file_ogg: '/sounds/house/house_snare_02.wav', file_aac: '/sounds/house/house_snare_02.wav' },
-  { id: 'house_snare_03', name: 'House Soft Snare', category: 'snare', genre: 'house', file_ogg: '/sounds/house/house_snare_03.wav', file_aac: '/sounds/house/house_snare_03.wav' },
-  { id: 'house_hihat_01', name: 'House Closed Hat', category: 'hihat', genre: 'house', file_ogg: '/sounds/house/house_hihat_01.wav', file_aac: '/sounds/house/house_hihat_01.wav' },
-  { id: 'house_hihat_02', name: 'House Open Hat', category: 'hihat', genre: 'house', file_ogg: '/sounds/house/house_hihat_02.wav', file_aac: '/sounds/house/house_hihat_02.wav' },
-  { id: 'house_hihat_03', name: 'House Pedal Hat', category: 'hihat', genre: 'house', file_ogg: '/sounds/house/house_hihat_03.wav', file_aac: '/sounds/house/house_hihat_03.wav' },
-  { id: 'house_melody_01', name: 'House Dark Pad', category: 'melody', genre: 'house', file_ogg: '/sounds/house/house_melody_01.wav', file_aac: '/sounds/house/house_melody_01.wav' },
-  { id: 'house_melody_02', name: 'House Bright Keys', category: 'melody', genre: 'house', file_ogg: '/sounds/house/house_melody_02.wav', file_aac: '/sounds/house/house_melody_02.wav' },
-  { id: 'house_melody_03', name: 'House Soft Pluck', category: 'melody', genre: 'house', file_ogg: '/sounds/house/house_melody_03.wav', file_aac: '/sounds/house/house_melody_03.wav' },
-  { id: 'house_bass_01', name: 'House Deep Bass', category: 'bass', genre: 'house', file_ogg: '/sounds/house/house_bass_01.wav', file_aac: '/sounds/house/house_bass_01.wav' },
-  { id: 'house_bass_02', name: 'House Sub Bass', category: 'bass', genre: 'house', file_ogg: '/sounds/house/house_bass_02.wav', file_aac: '/sounds/house/house_bass_02.wav' },
-  { id: 'house_bass_03', name: 'House Round Bass', category: 'bass', genre: 'house', file_ogg: '/sounds/house/house_bass_03.wav', file_aac: '/sounds/house/house_bass_03.wav' },
-  { id: 'house_fx_01', name: 'House Riser', category: 'fx', genre: 'house', file_ogg: '/sounds/house/house_fx_01.wav', file_aac: '/sounds/house/house_fx_01.wav' },
-  { id: 'house_fx_02', name: 'House Impact', category: 'fx', genre: 'house', file_ogg: '/sounds/house/house_fx_02.wav', file_aac: '/sounds/house/house_fx_02.wav' },
-  { id: 'house_fx_03', name: 'House Sweep', category: 'fx', genre: 'house', file_ogg: '/sounds/house/house_fx_03.wav', file_aac: '/sounds/house/house_fx_03.wav' },
+  ...sampleVariants('house', 'kick', ['House Deep Kick', 'House Punchy Kick', 'House Tight Kick']),
+  ...sampleVariants('house', 'snare', ['House Crack Snare', 'House Rim Snare', 'House Soft Snare']),
+  ...sampleVariants('house', 'hihat', ['House Closed Hat', 'House Open Hat', 'House Pedal Hat']),
+  ...sampleVariants('house', 'fx', ['House Riser', 'House Impact', 'House Sweep']),
+  synthVariant('house', 'melody', '01', 'House Bright Stab', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.005, decay: 0.15, sustain: 0.2, release: 0.3 } },
+  }),
+  synthVariant('house', 'melody', '02', 'House Piano Keys', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.3, release: 0.7 } },
+  }),
+  synthVariant('house', 'melody', '03', 'House Pluck Lead', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'square' }, envelope: { attack: 0.002, decay: 0.1, sustain: 0.05, release: 0.2 } },
+  }),
+  synthVariant('house', 'bass', '01', 'House Deep Bass', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.7, release: 0.5 } },
+  }),
+  synthVariant('house', 'bass', '02', 'House Punchy Bass', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'square' }, envelope: { attack: 0.005, decay: 0.15, sustain: 0.5, release: 0.3 } },
+  }),
+  synthVariant('house', 'bass', '03', 'House Round Bass', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.65, release: 0.6 } },
+  }),
 
   // ── Drill ─────────────────────────────────────────────────
-  { id: 'drill_kick_01', name: 'Drill Deep Kick', category: 'kick', genre: 'drill', file_ogg: '/sounds/drill/drill_kick_01.wav', file_aac: '/sounds/drill/drill_kick_01.wav' },
-  { id: 'drill_kick_02', name: 'Drill Punchy Kick', category: 'kick', genre: 'drill', file_ogg: '/sounds/drill/drill_kick_02.wav', file_aac: '/sounds/drill/drill_kick_02.wav' },
-  { id: 'drill_kick_03', name: 'Drill Tight Kick', category: 'kick', genre: 'drill', file_ogg: '/sounds/drill/drill_kick_03.wav', file_aac: '/sounds/drill/drill_kick_03.wav' },
-  { id: 'drill_snare_01', name: 'Drill Crack Snare', category: 'snare', genre: 'drill', file_ogg: '/sounds/drill/drill_snare_01.wav', file_aac: '/sounds/drill/drill_snare_01.wav' },
-  { id: 'drill_snare_02', name: 'Drill Rim Snare', category: 'snare', genre: 'drill', file_ogg: '/sounds/drill/drill_snare_02.wav', file_aac: '/sounds/drill/drill_snare_02.wav' },
-  { id: 'drill_snare_03', name: 'Drill Soft Snare', category: 'snare', genre: 'drill', file_ogg: '/sounds/drill/drill_snare_03.wav', file_aac: '/sounds/drill/drill_snare_03.wav' },
-  { id: 'drill_hihat_01', name: 'Drill Closed Hat', category: 'hihat', genre: 'drill', file_ogg: '/sounds/drill/drill_hihat_01.wav', file_aac: '/sounds/drill/drill_hihat_01.wav' },
-  { id: 'drill_hihat_02', name: 'Drill Open Hat', category: 'hihat', genre: 'drill', file_ogg: '/sounds/drill/drill_hihat_02.wav', file_aac: '/sounds/drill/drill_hihat_02.wav' },
-  { id: 'drill_hihat_03', name: 'Drill Pedal Hat', category: 'hihat', genre: 'drill', file_ogg: '/sounds/drill/drill_hihat_03.wav', file_aac: '/sounds/drill/drill_hihat_03.wav' },
-  { id: 'drill_melody_01', name: 'Drill Dark Pad', category: 'melody', genre: 'drill', file_ogg: '/sounds/drill/drill_melody_01.wav', file_aac: '/sounds/drill/drill_melody_01.wav' },
-  { id: 'drill_melody_02', name: 'Drill Bright Keys', category: 'melody', genre: 'drill', file_ogg: '/sounds/drill/drill_melody_02.wav', file_aac: '/sounds/drill/drill_melody_02.wav' },
-  { id: 'drill_melody_03', name: 'Drill Soft Pluck', category: 'melody', genre: 'drill', file_ogg: '/sounds/drill/drill_melody_03.wav', file_aac: '/sounds/drill/drill_melody_03.wav' },
-  { id: 'drill_bass_01', name: 'Drill Deep Bass', category: 'bass', genre: 'drill', file_ogg: '/sounds/drill/drill_bass_01.wav', file_aac: '/sounds/drill/drill_bass_01.wav' },
-  { id: 'drill_bass_02', name: 'Drill Sub Bass', category: 'bass', genre: 'drill', file_ogg: '/sounds/drill/drill_bass_02.wav', file_aac: '/sounds/drill/drill_bass_02.wav' },
-  { id: 'drill_bass_03', name: 'Drill Round Bass', category: 'bass', genre: 'drill', file_ogg: '/sounds/drill/drill_bass_03.wav', file_aac: '/sounds/drill/drill_bass_03.wav' },
-  { id: 'drill_fx_01', name: 'Drill Riser', category: 'fx', genre: 'drill', file_ogg: '/sounds/drill/drill_fx_01.wav', file_aac: '/sounds/drill/drill_fx_01.wav' },
-  { id: 'drill_fx_02', name: 'Drill Impact', category: 'fx', genre: 'drill', file_ogg: '/sounds/drill/drill_fx_02.wav', file_aac: '/sounds/drill/drill_fx_02.wav' },
-  { id: 'drill_fx_03', name: 'Drill Sweep', category: 'fx', genre: 'drill', file_ogg: '/sounds/drill/drill_fx_03.wav', file_aac: '/sounds/drill/drill_fx_03.wav' },
+  ...sampleVariants('drill', 'kick', ['Drill Deep Kick', 'Drill Punchy Kick', 'Drill Tight Kick']),
+  ...sampleVariants('drill', 'snare', ['Drill Crack Snare', 'Drill Rim Snare', 'Drill Soft Snare']),
+  ...sampleVariants('drill', 'hihat', ['Drill Closed Hat', 'Drill Open Hat', 'Drill Pedal Hat']),
+  ...sampleVariants('drill', 'fx', ['Drill Riser', 'Drill Impact', 'Drill Sweep']),
+  synthVariant('drill', 'melody', '01', 'Drill Dark Pad', {
+    kind: 'synth',
+    synth: 'fm',
+    options: { harmonicity: 1.5, modulationIndex: 3, envelope: { attack: 0.3, decay: 0.4, sustain: 0.5, release: 1.5 } },
+  }),
+  synthVariant('drill', 'melody', '02', 'Drill Cold Keys', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.6 } },
+  }),
+  synthVariant('drill', 'melody', '03', 'Drill Sparse Pluck', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.003, decay: 0.12, sustain: 0.05, release: 0.25 } },
+  }),
+  synthVariant('drill', 'bass', '01', 'Drill Slide 808', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.85, release: 1.4 } },
+    portamento: 0.18,
+  }),
+  synthVariant('drill', 'bass', '02', 'Drill Sub Slide', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.25, sustain: 0.9, release: 1.6 } },
+    portamento: 0.22,
+  }),
+  synthVariant('drill', 'bass', '03', 'Drill Round Bass', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'triangle' }, envelope: { attack: 0.015, decay: 0.28, sustain: 0.7, release: 1.0 } },
+    portamento: 0.1,
+  }),
 
   // ── Hyperpop ──────────────────────────────────────────────
-  { id: 'hyperpop_kick_01', name: 'Hyperpop Deep Kick', category: 'kick', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_kick_01.wav', file_aac: '/sounds/hyperpop/hyperpop_kick_01.wav' },
-  { id: 'hyperpop_kick_02', name: 'Hyperpop Punchy Kick', category: 'kick', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_kick_02.wav', file_aac: '/sounds/hyperpop/hyperpop_kick_02.wav' },
-  { id: 'hyperpop_kick_03', name: 'Hyperpop Tight Kick', category: 'kick', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_kick_03.wav', file_aac: '/sounds/hyperpop/hyperpop_kick_03.wav' },
-  { id: 'hyperpop_snare_01', name: 'Hyperpop Crack Snare', category: 'snare', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_snare_01.wav', file_aac: '/sounds/hyperpop/hyperpop_snare_01.wav' },
-  { id: 'hyperpop_snare_02', name: 'Hyperpop Rim Snare', category: 'snare', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_snare_02.wav', file_aac: '/sounds/hyperpop/hyperpop_snare_02.wav' },
-  { id: 'hyperpop_snare_03', name: 'Hyperpop Soft Snare', category: 'snare', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_snare_03.wav', file_aac: '/sounds/hyperpop/hyperpop_snare_03.wav' },
-  { id: 'hyperpop_hihat_01', name: 'Hyperpop Closed Hat', category: 'hihat', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_hihat_01.wav', file_aac: '/sounds/hyperpop/hyperpop_hihat_01.wav' },
-  { id: 'hyperpop_hihat_02', name: 'Hyperpop Open Hat', category: 'hihat', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_hihat_02.wav', file_aac: '/sounds/hyperpop/hyperpop_hihat_02.wav' },
-  { id: 'hyperpop_hihat_03', name: 'Hyperpop Pedal Hat', category: 'hihat', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_hihat_03.wav', file_aac: '/sounds/hyperpop/hyperpop_hihat_03.wav' },
-  { id: 'hyperpop_melody_01', name: 'Hyperpop Dark Pad', category: 'melody', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_melody_01.wav', file_aac: '/sounds/hyperpop/hyperpop_melody_01.wav' },
-  { id: 'hyperpop_melody_02', name: 'Hyperpop Bright Keys', category: 'melody', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_melody_02.wav', file_aac: '/sounds/hyperpop/hyperpop_melody_02.wav' },
-  { id: 'hyperpop_melody_03', name: 'Hyperpop Soft Pluck', category: 'melody', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_melody_03.wav', file_aac: '/sounds/hyperpop/hyperpop_melody_03.wav' },
-  { id: 'hyperpop_bass_01', name: 'Hyperpop Deep Bass', category: 'bass', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_bass_01.wav', file_aac: '/sounds/hyperpop/hyperpop_bass_01.wav' },
-  { id: 'hyperpop_bass_02', name: 'Hyperpop Sub Bass', category: 'bass', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_bass_02.wav', file_aac: '/sounds/hyperpop/hyperpop_bass_02.wav' },
-  { id: 'hyperpop_bass_03', name: 'Hyperpop Round Bass', category: 'bass', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_bass_03.wav', file_aac: '/sounds/hyperpop/hyperpop_bass_03.wav' },
-  { id: 'hyperpop_fx_01', name: 'Hyperpop Riser', category: 'fx', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_fx_01.wav', file_aac: '/sounds/hyperpop/hyperpop_fx_01.wav' },
-  { id: 'hyperpop_fx_02', name: 'Hyperpop Impact', category: 'fx', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_fx_02.wav', file_aac: '/sounds/hyperpop/hyperpop_fx_02.wav' },
-  { id: 'hyperpop_fx_03', name: 'Hyperpop Sweep', category: 'fx', genre: 'hyperpop', file_ogg: '/sounds/hyperpop/hyperpop_fx_03.wav', file_aac: '/sounds/hyperpop/hyperpop_fx_03.wav' },
+  ...sampleVariants('hyperpop', 'kick', ['Hyperpop Deep Kick', 'Hyperpop Punchy Kick', 'Hyperpop Tight Kick']),
+  ...sampleVariants('hyperpop', 'snare', ['Hyperpop Crack Snare', 'Hyperpop Rim Snare', 'Hyperpop Soft Snare']),
+  ...sampleVariants('hyperpop', 'hihat', ['Hyperpop Closed Hat', 'Hyperpop Open Hat', 'Hyperpop Pedal Hat']),
+  ...sampleVariants('hyperpop', 'fx', ['Hyperpop Riser', 'Hyperpop Impact', 'Hyperpop Sweep']),
+  synthVariant('hyperpop', 'melody', '01', 'Hyperpop Glitch Bell', {
+    kind: 'synth',
+    synth: 'fm',
+    options: { harmonicity: 3.5, modulationIndex: 8, envelope: { attack: 0.002, decay: 0.3, sustain: 0.1, release: 0.5 } },
+  }),
+  synthVariant('hyperpop', 'melody', '02', 'Hyperpop Bright Keys', {
+    kind: 'synth',
+    synth: 'poly',
+    options: { oscillator: { type: 'square' }, envelope: { attack: 0.005, decay: 0.15, sustain: 0.3, release: 0.4 } },
+  }),
+  synthVariant('hyperpop', 'melody', '03', 'Hyperpop Sparkle Pluck', {
+    kind: 'synth',
+    synth: 'fm',
+    options: { harmonicity: 5, modulationIndex: 12, envelope: { attack: 0.001, decay: 0.1, sustain: 0.02, release: 0.2 } },
+  }),
+  synthVariant('hyperpop', 'bass', '01', 'Hyperpop Distorted 808', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.7, release: 0.6 } },
+    portamento: 0.05,
+  }),
+  synthVariant('hyperpop', 'bass', '02', 'Hyperpop Squeaky Sub', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'square' }, envelope: { attack: 0.005, decay: 0.15, sustain: 0.6, release: 0.4 } },
+  }),
+  synthVariant('hyperpop', 'bass', '03', 'Hyperpop Round Bass', {
+    kind: 'synth',
+    synth: 'mono808',
+    options: { oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.65, release: 0.5 } },
+  }),
 ];
 
 /**
- * Retrieves all sounds matching a given genre and track category.
+ * Retrieves all sound variants matching a given genre and track category.
  * @param genre - The genre to filter by.
  * @param category - The track category to filter by.
- * @returns Array of matching sound definitions.
+ * @returns Array of matching sound variants.
  */
-export function getSounds(genre: Genre, category: TrackCategory): SoundDefinition[] {
-  return SOUND_CATALOG.filter(s => s.genre === genre && s.category === category);
+export function getSounds(genre: Genre, category: TrackCategory): SoundVariant[] {
+  return SOUND_CATALOG.filter((s) => s.genre === genre && s.category === category);
 }
 
 /**
- * Looks up a single sound definition by its unique ID.
+ * Looks up a single sound variant by its unique ID.
  * @param id - The sound ID (e.g., `'trap_kick_01'`).
- * @returns The matching sound definition, or `undefined` if not found.
+ * @returns The matching sound variant, or `undefined` if not found.
  */
-export function getSound(id: string): SoundDefinition | undefined {
-  return SOUND_CATALOG.find(s => s.id === id);
+export function getSound(id: string): SoundVariant | undefined {
+  return SOUND_CATALOG.find((s) => s.id === id);
 }
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-
 /**
- * Returns the resolved URL for a sound's audio file.
- * Currently remaps all genres to house sounds as a temporary fallback.
- * @param sound - The sound definition to resolve.
- * @returns Absolute URL path to the audio file.
+ * Returns the resolved sample URL for a sound variant, or an empty string
+ * for synth-backed variants (which have no audio file to load).
+ * @param sound - The sound variant to resolve.
+ * @returns Absolute URL path to the audio file, or `''` for synth variants.
  */
-export function getSoundUrl(sound: SoundDefinition): string {
-  // Temporarily use house sounds for all genres until genre-specific sounds are added
-  const houseFile = sound.file_ogg.replace(
-    /\/sounds\/\w+\/\w+_(kick|snare|hihat|melody|bass|fx)_(\d+)\.wav/,
-    '/sounds/house/house_$1_$2.wav'
-  );
-  return `${basePath}${houseFile}`;
+export function getSoundUrl(sound: SoundVariant): string {
+  return sound.spec.kind === 'sample' ? sound.spec.url : '';
 }

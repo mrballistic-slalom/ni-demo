@@ -1,5 +1,7 @@
 # NI Play — Claude Code Build Prompt
 
+> **Superseded.** This document is the *original* build prompt and no longer describes the app. It has been superseded by the redesign spec at [`docs/superpowers/specs/2026-07-08-ni-play-redesign-design.md`](docs/superpowers/specs/2026-07-08-ni-play-redesign-design.md). In particular, the Supabase backend/auth/database, MUI, and sample-library assumptions below no longer apply — the redesigned app has no backend at all. Kept here for historical reference only; see `README.md` for the current, accurate description of the app.
+
 ## MISSION
 
 Build "NI Play" — a browser-based, mobile-first step sequencer beat maker. Users land, pick a genre, make a beat on a grid, and save/share it. The entire goal is email capture and habit formation (3 beats). This is a creative toy, NOT a DAW.

@@ -1,25 +1,21 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import ThemeRegistry from '@/components/Layout/ThemeRegistry';
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
+import EmotionRegistry from '@/theme/EmotionRegistry';
+import GenreSkinProvider from '@/theme/GenreSkinProvider';
+import { bodyFontClass } from '@/theme/fonts';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: 'NI Play — Beat Maker',
-  description: 'Make beats in your browser. Pick a genre, make a beat, share it.',
+  description: 'Make beats in your browser — pick a genre, build a beat, and share it.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className} style={{ margin: 0, backgroundColor: '#0A0A0A' }}>
-        <ThemeRegistry>
-          {children}
-        </ThemeRegistry>
+      <body className={bodyFontClass} style={{ margin: 0 }}>
+        <EmotionRegistry>
+          <GenreSkinProvider>{children}</GenreSkinProvider>
+        </EmotionRegistry>
       </body>
     </html>
   );

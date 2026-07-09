@@ -1,33 +1,84 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import CloseRounded from '@mui/icons-material/CloseRounded';
-import ContentCopyRounded from '@mui/icons-material/ContentCopyRounded';
-import CheckRounded from '@mui/icons-material/CheckRounded';
+import { useCallback, useMemo, useState } from 'react';
+import styled from '@emotion/styled';
+import { Check, Copy, Share2 } from 'lucide-react';
+import BottomSheet from '@/components/common/BottomSheet';
+import { focusRing } from '@/components/common/focusRing';
 import { encodeBeatToUrl } from '@/lib/utils';
 import { useGridStore } from '@/stores/useGridStore';
 import { useProjectStore } from '@/stores/useProjectStore';
 
 /** Props for {@link ShareModal}. */
 interface ShareModalProps {
-  /** Whether the modal is currently visible. */
+  /** Whether the sheet is currently visible. */
   open: boolean;
-  /** Callback to close the modal. */
+  /** Callback to close the sheet. */
   onClose: () => void;
 }
 
+const UrlRow = styled.div`
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--genre-cell-off);
+  margin-bottom: 16px;
+`;
+
+const UrlText = styled.span`
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  color: var(--genre-text-dim);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+`;
+
+const ActionButton = styled.button`
+  appearance: none;
+  border: none;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, background-color 0.15s ease;
+
+  &:focus-visible {
+    ${focusRing()}
+  }
+`;
+
+const PrimaryButton = styled(ActionButton)<{ $done: boolean }>`
+  background: ${(p) => (p.$done ? 'var(--genre-accent)' : 'var(--genre-primary)')};
+  color: var(--genre-surface);
+  box-shadow: 0 0 var(--genre-glow-blur, 12px) var(--genre-glow);
+`;
+
+const SecondaryButton = styled(ActionButton)`
+  background: transparent;
+  border: 1px solid var(--genre-text-dim);
+  color: var(--genre-text);
+  margin-top: 10px;
+`;
+
 /**
- * Modal dialog for sharing the current beat via a generated URL.
- * Supports clipboard copy, native Web Share API, and direct links
- * to X (Twitter) and WhatsApp.
+ * Bottom-sheet for sharing the current beat as a URL. The share link
+ * round-trips the beat's genre, BPM, grid, sound selections, and volumes
+ * through {@link encodeBeatToUrl}, so opening it lands on `/beat` with the
+ * same beat rendered read-only. Offers a clipboard copy (with a transient
+ * "Copied!" confirmation) and, when the browser supports it, the native Web
+ * Share sheet via `navigator.share`.
  */
 export default function ShareModal({ open, onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
@@ -47,84 +98,51 @@ export default function ShareModal({ open, onClose }: ShareModalProps) {
     return path;
   }, [genre, bpm, grid, sounds, volumes]);
 
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
+      // Clipboard API unavailable (unsupported browser/insecure context) — no-op.
     }
   }, [shareUrl]);
 
   const handleNativeShare = useCallback(async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${title} - NI Play`,
-          text: 'Check out this beat I made!',
-          url: shareUrl,
-        });
-      } catch {
-        // user cancelled
-      }
+    try {
+      await navigator.share({
+        title: `${title} — NI Play`,
+        text: 'Check out this beat I made!',
+        url: shareUrl,
+      });
+    } catch {
+      // User cancelled the share sheet, or the platform rejected it — no-op.
     }
   }, [title, shareUrl]);
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{
-        sx: {
-          backgroundColor: '#1A1A1A',
-          borderRadius: 3,
-        },
-      }}
-    >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>Share Beat</Typography>
-        <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
-          <CloseRounded />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-          <TextField
-            fullWidth
-            value={shareUrl}
-            size="small"
-            InputProps={{ readOnly: true, sx: { fontSize: '0.85rem' } }}
-          />
-          <IconButton onClick={handleCopy} sx={{ color: copied ? '#00E676' : 'text.secondary' }}>
-            {copied ? <CheckRounded /> : <ContentCopyRounded />}
-          </IconButton>
-        </Box>
+    <BottomSheet open={open} onClose={onClose} title="Share your beat">
+      <UrlRow>
+        <UrlText>{shareUrl}</UrlText>
+      </UrlRow>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {typeof navigator !== 'undefined' && 'share' in navigator && (
-            <Button variant="contained" onClick={handleNativeShare} sx={{ backgroundColor: 'var(--genre-primary)' }}>
-              Share...
-            </Button>
-          )}
-          <Button
-            variant="outlined"
-            onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this beat I made on NI Play!`)}&url=${encodeURIComponent(shareUrl)}`, '_blank')}
-            sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'text.primary' }}
-          >
-            Share on X
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this beat I made on NI Play! ${shareUrl}`)}`, '_blank')}
-            sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'text.primary' }}
-          >
-            Share on WhatsApp
-          </Button>
-        </Box>
-      </DialogContent>
-    </Dialog>
+      <PrimaryButton type="button" onClick={handleCopy} $done={copied}>
+        {copied ? (
+          <Check size={18} strokeWidth={2.5} aria-hidden="true" />
+        ) : (
+          <Copy size={18} strokeWidth={2.25} aria-hidden="true" />
+        )}
+        {copied ? 'Copied!' : 'Copy link'}
+      </PrimaryButton>
+
+      {canShare && (
+        <SecondaryButton type="button" onClick={handleNativeShare}>
+          <Share2 size={18} strokeWidth={2.25} aria-hidden="true" />
+          Share…
+        </SecondaryButton>
+      )}
+    </BottomSheet>
   );
 }

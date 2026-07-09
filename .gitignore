@@ -41,14 +41,6 @@ next-env.d.ts
 # Vercel
 .vercel
 
-# Generated placeholder sounds (re-run script to regenerate)
-public/sounds/trap/
-public/sounds/lofi/
-public/sounds/drill/
-public/sounds/hyperpop/
-# Real house sounds are tracked
-!public/sounds/house/
-
 # Test coverage
 coverage/
 .nyc_output/

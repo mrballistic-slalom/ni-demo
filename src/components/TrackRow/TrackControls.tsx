@@ -1,14 +1,15 @@
 'use client';
 
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Slider from '@mui/material/Slider';
-import Typography from '@mui/material/Typography';
-import VolumeUpRounded from '@mui/icons-material/VolumeUpRounded';
-import VolumeOffRounded from '@mui/icons-material/VolumeOffRounded';
-import { useGridStore } from '@/stores/useGridStore';
-import { TrackCategory } from '@/types';
 import { useCallback } from 'react';
+import styled from '@emotion/styled';
+import { Volume2, VolumeX, Headphones } from 'lucide-react';
+import IconButton from '@/components/common/IconButton';
+import Fader from '@/components/common/Fader';
+import { focusRing } from '@/components/common/focusRing';
+import { useGridStore } from '@/stores/useGridStore';
+import { getSound } from '@/data/sounds';
+import { TRACK_ICONS, TRACK_LABELS } from '@/data/trackMeta';
+import { TrackCategory } from '@/types';
 
 /** Props for {@link TrackControls}. */
 interface TrackControlsProps {
@@ -18,9 +19,68 @@ interface TrackControlsProps {
   onSoundClick: (track: TrackCategory) => void;
 }
 
+const Row = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+`;
+
+const TrackLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 56px;
+  flex-shrink: 0;
+  color: var(--genre-text-dim);
+`;
+
+const LabelText = styled.span`
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const FaderWrap = styled.div`
+  flex: 1 1 auto;
+  min-width: 44px;
+  max-width: 140px;
+`;
+
+const SoundLabel = styled.button`
+  appearance: none;
+  background: none;
+  border: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--genre-accent);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  &:focus-visible {
+    ${focusRing()}
+  }
+`;
+
 /**
- * Per-track mixer controls including mute, solo, volume slider, and a
- * clickable sound name that opens the sound browser.
+ * Per-track mixer channel strip: mute + solo toggles, a volume fader, and a
+ * tappable sound name that opens the sound browser via `onSoundClick`.
  */
 export default function TrackControls({ track, onSoundClick }: TrackControlsProps) {
   const muted = useGridStore((s) => s.mutes[track]);
@@ -30,72 +90,52 @@ export default function TrackControls({ track, onSoundClick }: TrackControlsProp
   const toggleSolo = useGridStore((s) => s.toggleSolo);
   const setVolume = useGridStore((s) => s.setVolume);
   const soundId = useGridStore((s) => s.sounds[track]);
+  const soundName = getSound(soundId)?.name ?? soundId;
+  const Icon = TRACK_ICONS[track];
 
-  const handleVolumeChange = useCallback((_: Event, value: number | number[]) => {
-    setVolume(track, value as number);
-  }, [track, setVolume]);
+  const handleVolumeChange = useCallback(
+    (value: number) => setVolume(track, value),
+    [track, setVolume]
+  );
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 200 }}>
+    <Row>
+      <TrackLabel>
+        <Icon size={13} strokeWidth={2.25} aria-hidden="true" />
+        <LabelText>{TRACK_LABELS[track]}</LabelText>
+      </TrackLabel>
+
       <IconButton
-        size="small"
+        icon={muted ? VolumeX : Volume2}
+        label={muted ? `Unmute ${track}` : `Mute ${track}`}
+        active={muted}
+        activeVariant="muted"
+        size={32}
         onClick={() => toggleMute(track)}
-        sx={{
-          color: muted ? '#FF5252' : 'text.secondary',
-          fontSize: '0.6rem',
-          width: 28,
-          height: 28,
-        }}
-      >
-        {muted ? <VolumeOffRounded fontSize="small" /> : <VolumeUpRounded fontSize="small" />}
-      </IconButton>
-
-      <Typography
-        variant="caption"
-        onClick={() => toggleSolo(track)}
-        sx={{
-          cursor: 'pointer',
-          color: soloed ? 'var(--genre-accent)' : 'text.secondary',
-          fontWeight: soloed ? 700 : 400,
-          fontSize: '0.6rem',
-          minWidth: 14,
-          textAlign: 'center',
-          userSelect: 'none',
-        }}
-      >
-        S
-      </Typography>
-
-      <Slider
-        value={volume}
-        min={0}
-        max={1}
-        step={0.01}
-        onChange={handleVolumeChange}
-        sx={{
-          width: 60,
-          color: 'var(--genre-primary)',
-          '& .MuiSlider-thumb': { width: 10, height: 10 },
-          '& .MuiSlider-rail': { opacity: 0.3 },
-        }}
       />
 
-      <Typography
-        variant="caption"
-        onClick={() => onSoundClick(track)}
-        sx={{
-          cursor: 'pointer',
-          color: 'var(--genre-accent)',
-          fontSize: '0.6rem',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          maxWidth: 80,
-          '&:hover': { textDecoration: 'underline' },
-        }}
-      >
-        {soundId}
-      </Typography>
-    </Box>
+      <IconButton
+        icon={Headphones}
+        label={soloed ? `Unsolo ${track}` : `Solo ${track}`}
+        active={soloed}
+        size={32}
+        onClick={() => toggleSolo(track)}
+      />
+
+      <FaderWrap>
+        <Fader
+          value={volume}
+          min={0}
+          max={1}
+          step={0.01}
+          onChange={handleVolumeChange}
+          ariaLabel={`${track} volume`}
+        />
+      </FaderWrap>
+
+      <SoundLabel type="button" onClick={() => onSoundClick(track)}>
+        {soundName}
+      </SoundLabel>
+    </Row>
   );
 }
