@@ -465,9 +465,11 @@ export interface SoundVariant {
 }
 ```
 
-Extend `GenreDefinition` with: `kit: GenreKit;` `noteRows: { melody: NoteRow; bass: NoteRow };` `tagline: string;` `hook: string;`. (Keep existing fields.)
+Extend `GenreDefinition` with these fields as **OPTIONAL** (so the existing `genres.ts` keeps compiling until Task 10 populates them): `kit?: GenreKit;` `noteRows?: { melody: NoteRow; bass: NoteRow };` `tagline?: string;` `hook?: string;`. (Keep existing fields. Keep the existing `SoundDefinition` interface untouched — `sounds.ts` still uses it until Task 9; `SoundVariant` is additive.)
 
-- [ ] **Step 2: Typecheck.** Run: `npm run typecheck` → expect errors only in files not yet updated (genres.ts, sounds.ts). Note them; they're fixed in Tasks 9–10.
+**Why optional:** making them required would break `genres.ts`'s typecheck across Milestones 2–4 (and fail CI on every branch) until Task 10 fills them in. Optional keeps every milestone green. Task 10 populates all five genres; consumers optional-guard the reads until then.
+
+- [ ] **Step 2: Typecheck must stay GREEN.** Run: `npm run typecheck && npm run lint && npm test && npm run build` → ALL green (additive optional types break nothing). If genres.ts errors, a field was left required — fix it.
 
 - [ ] **Step 3: Commit.**
 
@@ -543,19 +545,20 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Create: `src/audio/synthKit.ts`
 - Modify: `src/audio/soundLoader.ts`
 
+**Scope note:** M2 builds the audio *engine* only. It must NOT depend on the `SoundVariant` catalog (that reframe is Task 9, M3) — so do not call `getSound().spec` here. `buildKit` takes a `GenreKit` argument; `loadAllSounds` reads the **optional** `GENRES[genre].kit` (undefined until Task 10, so a no-op guard for now). The catalog-derived `loadAllSounds`/`swapSound` wiring is added in Task 9 once `getSound` returns `SoundVariant`. Everything here must keep `npm run build && typecheck && lint && test` GREEN.
+
 **Interfaces:**
-- Consumes: `createVoice` (Task 6), `GenreKit`, `SoundVariant`, `getSound` (sounds.ts).
+- Consumes: `createVoice` (Task 6), `GenreKit`, `NoteRow` (Task 5); `getTone`.
 - Produces:
-  - `buildKit(kit: GenreKit): Promise<void>` — creates a `Voice` + `Tone.Gain` per track, wires voice→gain→destination, stores in module state, awaits `Tone.loaded()` for samples.
-  - `getVoice(track): Voice | undefined`, `getGain(track): Tone.Gain | undefined`, `disposeKit()`.
-  - `loadAllSounds()` (rewritten) → resolves each track's variant `spec`, calls `buildKit`.
-  - `swapSound(track, soundId)` → rebuild just that track's voice from the variant spec, update store.
+  - `buildKit(kit: GenreKit): Promise<void>` — creates a `Voice` + `Tone.Gain` per track, wires voice→gain→destination, stores in module state, awaits `Tone.loaded()` for samples. Disposes any prior kit first.
+  - `getVoice(track): Voice | undefined`, `getGain(track): Tone.Gain | undefined`, `setGain(track, value)`, `disposeKit()`.
+  - `loadAllSounds(): Promise<void>` — reads `GENRES[useGridStore.getState().genre].kit`; if defined, `await buildKit(kit)`; if undefined (pre-Task-10), no-op. (Catalog-derived variant resolution + `swapSound` are added in Task 9.)
 
-- [ ] **Step 1: Implement `src/audio/synthKit.ts`** per Interfaces. Per-track chain: `voice.output → gain → Tone.getDestination()`. `gain.gain.value` set from store volume on each trigger (or on change).
+- [ ] **Step 1: Implement `src/audio/synthKit.ts`** per Interfaces. Per-track chain: `voice.output → gain → Tone.getDestination()`. `setGain(track, v)` sets `gain.gain.value = Tone.gainToDb`-style linear gain from the store volume.
 
-- [ ] **Step 2: Rewrite `src/audio/soundLoader.ts`** so `loadAllSounds()` reads `useGridStore.getState().sounds`, maps each to its `SoundVariant.spec` (via `getSound`), assembles a `GenreKit`, and calls `buildKit`. `swapSound(track, soundId)` rebuilds that track's voice.
+- [ ] **Step 2: Rewrite `src/audio/soundLoader.ts`** so `loadAllSounds()` reads the optional `GENRES[genre].kit` and calls `buildKit` when present (no-op otherwise). Remove the old file-`Tone.Player` loading path. Do NOT reference the `SoundVariant` catalog or `getSound().spec` yet (Task 9). Leave a `// TODO(Task 9): swapSound + catalog-derived kit` marker.
 
-- [ ] **Step 3: Typecheck.** Run: `npm run typecheck` → errors remaining only in genres.ts/sounds.ts (fixed next milestone). Sequencer will be updated in Task 8.
+- [ ] **Step 3: Verify green.** Run: `npm run typecheck && npm run lint && npm test && npm run build` → all green (the engine compiles with no catalog/genre-kit data yet; it simply builds nothing until Task 10 populates kits).
 
 - [ ] **Step 4: Commit.**
 
@@ -575,11 +578,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Consumes: `getVoice`, `getGain` (Task 7); `useGridStore` (grid, volumes, mutes, solos, genre `noteRows`).
 - Produces: `createSequence()`, `startPlayback()`, `stopPlayback()`, `updateBpm()`, `disposeSequence()` (same names as today).
 
-- [ ] **Step 1: Rewrite the `Tone.Sequence` callback** so that for each active step it computes the note for melody/bass from `GENRES[genre].noteRows[track][step % 16]` (null → skip if no note), sets the track gain from `volumes[track]`, and calls `getVoice(track)?.trigger(time, note)`. Drums pass `note = undefined`. Keep mute/solo logic. Remove the old `players[track].start` path and `loadSound`.
+- [ ] **Step 1: Rewrite the `Tone.Sequence` callback** so that for each active step it computes the note for melody/bass from the **optional** note row — `GENRES[genre].noteRows?.[track as 'melody'|'bass']?.[step % 16] ?? undefined` (null/undefined → no explicit note), calls `setGain(track, volumes[track])` (or reads gain directly), and calls `getVoice(track)?.trigger(time, note)`. Drums pass `note = undefined`. Keep mute/solo logic. Remove the old `players[track].start` path and `loadSound` import. Because `getVoice` returns `undefined` until a kit is built (Task 10), the callback safely no-ops on audio until then.
 
-- [ ] **Step 2: Typecheck.** Run: `npm run typecheck` → sequencer clean (genres/sounds still pending).
+- [ ] **Step 2: Verify green.** Run: `npm run typecheck && npm run lint && npm test && npm run build` → all green.
 
-- [ ] **Step 3: Manual smoke deferred** to Task 11 (needs genre data + a browser). Note in commit.
+- [ ] **Step 3: Manual smoke deferred** to Task 11 (needs genre kits + a browser). Note in commit.
 
 - [ ] **Step 4: Commit.**
 
@@ -645,14 +648,16 @@ describe('renderSounds DSP', () => {
 
 - [ ] **Step 6: Delete old script.** `git rm scripts/generateSounds.mjs`. Remove stale house-only WAVs not referenced by the new catalog: regenerate cleans dirs (script should `rm -rf` each genre dir before writing, or write over).
 
-- [ ] **Step 7: Typecheck.** Run: `npm run typecheck` → sounds.ts clean; only genres.ts pending (Task 10).
+- [ ] **Step 7: Wire the catalog into `soundLoader.ts`** (the piece deferred from Task 7, now that `getSound` returns `SoundVariant`): implement `swapSound(track, soundId)` — `const spec = getSound(soundId)?.spec; if (!spec) return; createVoice(spec)` → replace that track's voice in the synthKit module + `useGridStore.getState().setSound(track, soundId)`. Optionally have `loadAllSounds()` derive the kit from `useGridStore.getState().sounds` + `getSound(id).spec` (falling back to `GENRES[genre].kit`). Export `swapSound`.
 
-- [ ] **Step 8: Commit.**
+- [ ] **Step 8: Keep the whole tree GREEN.** The `getSound`/`getSounds`/`getSoundUrl` return type changed (`SoundDefinition` → `SoundVariant`), so any current consumer that reads `.file_ogg`/`.file_aac` (e.g. `SoundBrowser.tsx`, still un-reskinned) will not compile. Update those call sites to the new shape (use `getSoundUrl(variant)` / `variant.spec`) — minimal edits to keep them compiling; full reskin is Milestone 5. Run `npm run typecheck && npm run lint && npm test && npm run build` → ALL green. (`genres.ts` still compiles because its new fields are optional from Task 5.)
+
+- [ ] **Step 9: Commit.**
 
 ```bash
-git add scripts/renderSounds.mjs scripts/__tests__/renderSounds.test.mjs src/data/sounds.ts package.json public/sounds
+git add scripts/renderSounds.mjs scripts/__tests__/renderSounds.test.mjs src/data/sounds.ts src/audio/soundLoader.ts src/components package.json public/sounds
 git rm scripts/generateSounds.mjs
-git commit -m "feat: offline DSP sample renderer + variant catalog
+git commit -m "feat: offline DSP sample renderer + variant catalog; wire soundLoader
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
@@ -704,13 +709,15 @@ describe('genres', () => {
 
 - [ ] **Step 3: Rewrite `src/data/genres.ts`** using the copy table and kit direction from the spec. For each genre set: `tagline`/`hook` (curly punctuation), `bpmRange`/`defaultBpm`, colors (may mirror skin primary), `template.grid` (16-step patterns that show the genre off), `template.sounds` (default variant ids that exist in the catalog), `template.volumes`, `kit` (map each track to its default variant's `spec`), and `noteRows` (genre-appropriate melody + bass notes, length 16, `null` where silent). Keep the `p()` helper.
 
-- [ ] **Step 4: Run, verify passes.** Run: `npm test -- genres` → PASS. Then `npm run typecheck` → clean across the project.
+- [ ] **Step 4: Tighten types now that every genre defines them.** In `src/types/index.ts`, change `GenreDefinition`'s `kit`, `noteRows`, `tagline`, `hook` from optional (`?`) back to **required** (all 5 genres now provide them). The M2 consumers that used optional-chaining (`noteRows?.`, `GENRES[genre].kit` guards) still compile — leave them; the guards are harmless. This makes the `genres.test` access `GENRES[g].noteRows.melody` valid without `!`.
 
-- [ ] **Step 5: Commit.**
+- [ ] **Step 5: Run, verify passes.** Run: `npm test -- genres` → PASS. Then `npm run typecheck && npm run lint && npm test && npm run build` → all green across the project. Coverage: `genres.ts` and `sounds.ts` are in the include set — confirm both ≥ 80% via `npm run test:coverage` (the genres test + a sounds test exercise them; add a small `sounds.test.ts` if `sounds.ts` is under 80%).
+
+- [ ] **Step 6: Commit.**
 
 ```bash
-git add src/data/genres.ts src/data/__tests__/genres.test.ts
-git commit -m "feat: rebuild genres with identities, kits, note rows
+git add src/data/genres.ts src/data/__tests__/genres.test.ts src/types/index.ts src/data/__tests__/sounds.test.ts
+git commit -m "feat: rebuild genres with identities, kits, note rows; require kit/noteRows
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
