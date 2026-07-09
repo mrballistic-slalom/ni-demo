@@ -75,6 +75,9 @@ const PlayheadLayer = styled.div`
   left: calc(${LABEL_WIDTH}px + ${STEP_GAP});
   right: 0;
   z-index: 1;
+  /* The beam overlay spans the whole grid body above the cell buttons — it
+     must never intercept taps, or cells become untappable. */
+  pointer-events: none;
 `;
 
 /**
