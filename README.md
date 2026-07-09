@@ -1,19 +1,19 @@
 # NI Play
 
-A browser-based, mobile-first step sequencer beat maker. Pick a genre, make a beat on a grid, and save or share it.
-
-> Built with Next.js 14, MUI v5, Tone.js, Zustand, and Supabase.
+A zero-backend, mobile-first, browser step-sequencer beat toy. Pick a genre — a beat’s already grooving — tinker with it, then share a link or export a WAV. No accounts, no server.
 
 ---
 
 ## What It Is
 
-NI Play is a creative toy, not a DAW. The goal is to make beat-making fun and immediate — no music theory knowledge required. The core loop is:
+NI Play is a creative toy, not a DAW. The core loop is:
 
-1. Land on the app and pick a genre (Trap, Lo-fi, House, Drill, or Hyperpop).
-2. A pre-built beat starts playing on a 6-track × 16-step grid.
-3. Toggle cells, swap sounds, adjust BPM, and extend the pattern.
-4. Save your beat (requires a free account), share a public link, or export to MP3/WAV.
+1. Land on the app, read the pitch, and pick a genre (Trap, Lo-Fi, House, Drill, or Hyperpop).
+2. A pre-built beat starts playing immediately on a 6-track × 16-step grid.
+3. Toggle cells, swap sounds, adjust BPM/bars/swing, mute/solo tracks.
+4. Share a link (the beat is encoded right into the URL) or export a WAV.
+
+There’s no sign-up, no save-to-account flow, and no server-side state — everything lives in the browser and in the share URL itself.
 
 ---
 
@@ -21,12 +21,59 @@ NI Play is a creative toy, not a DAW. The goal is to make beat-making fun and im
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router) |
-| UI | MUI v5 (Material UI) |
+| Framework | Next.js 16 (App Router, Turbopack) |
+| UI Library | React 19 |
+| Language | TypeScript 6.0.3 |
+| Styling | Emotion (`@emotion/react`, `@emotion/styled`) |
+| Animation | Motion (`motion`) |
+| Icons | `lucide-react` |
 | Audio | Tone.js |
 | State | Zustand |
-| Backend / Auth / DB | Supabase (Postgres + Auth + Storage) |
+| Testing | Vitest 4 (+ `@vitest/coverage-v8`) |
+| Runtime | Node ≥ 24 |
 | Deployment | Vercel |
+
+**Explicitly not used:** Supabase, MUI, Tailwind. All three were part of the original build and were removed in the redesign — there’s no backend, no auth, and no database.
+
+---
+
+## Audio Architecture (hybrid)
+
+Two different signal sources feed the same sequencer:
+
+- **Drum/FX one-shots** are rendered **offline** ahead of time by `scripts/renderSounds.mjs` — a small DSP renderer that synthesizes each hit (noise, saturation, envelopes, etc.) — into WAV files under `public/sounds/<genre>/…wav`. These play back at runtime via `Tone.Player`.
+- **Bass and melody** are live Tone.js synth voices, triggered with a note at each step rather than a fixed sample.
+
+Both are unified behind a single `Voice` abstraction (`src/audio/voice.ts`), so the sequencer doesn’t need to know whether a track is a sample or a synth. `src/audio/synthKit.ts` builds a kit of voices per genre and routes each one → a per-track `Tone.Gain` (for mute/solo/volume) → a shared master limiter → the destination. `src/audio/sequencer.ts` drives a `Tone.Sequence` that triggers whichever voice is armed for each track on each active step. WAV export (`src/audio/exporter.ts`) mirrors the same voice/gain/limiter chain through an offline `OfflineAudioContext` render.
+
+---
+
+## Genres
+
+Five genres, each a full “skin”: color palette, display font, background texture, cell geometry, glow treatment, and motion feel — plus a tuned kit of sounds and a genre-appropriate melody/bass note range.
+
+| Genre | Vibe |
+|---|---|
+| Trap | Dark, hard-hitting |
+| Lo-Fi | Warm, dusty, chill |
+| House | Driving, groovy |
+| Drill | Aggressive, sliding bass |
+| Hyperpop | Chaotic, detuned, glitchy |
+
+Genre skins live in `src/theme/skins.ts`; genre patterns/kits live in `src/data/genres.ts`.
+
+---
+
+## Features
+
+- **Landing page** — a short explainer (hero + “how it works”) that flows into the genre picker, each tile skinned in its genre’s palette.
+- **Step grid** — a tactile 6-track × 16-step (× pattern length) grid with an animated beam-style playhead sweeping across the active column.
+- **Hardware-feel transport** — play/stop, BPM, bar count (1/2/4 bars), and swing.
+- **Track controls** — mute, solo, and volume per track.
+- **Sound browser** — preview and swap the sound assigned to any track.
+- **URL share** — the entire beat (genre, grid, sounds, BPM, swing, etc.) is encoded directly into the share URL — no database round-trip needed to reopen it.
+- **WAV export** — client-side render via `OfflineAudioContext`, no server involved.
+- **Shareable `/beat` page** — opening a share link plays the beat back and renders a per-beat dynamic Open Graph image for link previews.
 
 ---
 
@@ -34,18 +81,19 @@ NI Play is a creative toy, not a DAW. The goal is to make beat-making fun and im
 
 ```
 src/
-├── app/             # Next.js App Router pages and API routes
-├── audio/           # Tone.js engine, sequencer, sound loader, exporter
-├── components/      # UI components (Grid, Transport, TrackRow, Auth, etc.)
-├── data/            # Genre definitions, sound catalog, beat templates
-├── lib/             # Supabase clients, middleware, utilities
-├── stores/          # Zustand stores (grid, transport, project, auth)
-├── theme/           # MUI theme and per-genre color palettes
+├── app/             # Next.js App Router pages (/, /studio, /beat, /beat/og)
+├── audio/           # Tone.js engine, sequencer, voice abstraction, synth kit, sound loader, exporter
+├── components/      # UI components (Landing, Grid, Transport, TrackRow, SoundBrowser, Share, Export, Studio, Layout, common)
+├── data/            # Genre definitions, sound catalog, track metadata
+├── lib/             # Share-URL encode/decode, WAV encoding, beat-preview helpers, general utilities
+├── stores/          # Zustand stores (grid, transport, etc.)
+├── theme/           # Per-genre skins, fonts, Emotion registry
+├── test/            # Vitest setup
 └── types/           # Shared TypeScript types
-supabase/
-└── migrations/      # Database schema SQL
+scripts/
+└── renderSounds.mjs # Offline DSP renderer — generates the WAV files in public/sounds/
 public/
-└── sounds/          # Placeholder audio files (generated locally)
+└── sounds/          # Rendered per-genre audio (output of renderSounds.mjs)
 ```
 
 ---
@@ -54,109 +102,60 @@ public/
 
 ### Prerequisites
 
-- Node.js 18+
-- A [Supabase](https://supabase.com) project
+- Node.js 24 (see `.nvmrc`)
 
-### 1. Clone and install
+### Install and run
 
 ```bash
 git clone https://github.com/your-org/ni-play.git
 cd ni-play
 npm install
-```
-
-### 2. Configure environment variables
-
-```bash
-cp .env.local.example .env.local
-```
-
-Fill in your Supabase project URL, anon key, and service role key:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-### 3. Set up the database
-
-Run the migration against your Supabase project:
-
-```bash
-# Via Supabase dashboard SQL editor, or using the CLI:
-supabase db push
-```
-
-The migration file is at `supabase/migrations/001_initial_schema.sql`.
-
-### 4. Generate placeholder sounds
-
-The app needs audio files in `public/sounds/` to function locally. Generate synthetic placeholder WAVs with:
-
-```bash
-node scripts/generateSounds.mjs
-```
-
-This creates one file per category per genre variant (90 files total) using simple oscillators.
-
-### 5. Run the dev server
-
-```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
----
+There’s no environment configuration required — no API keys, no database URL, nothing to fill in. If `public/sounds/` is missing or stale, regenerate it:
 
-## Genres
+```bash
+npm run generate-sounds
+```
 
-| Genre | BPM Range | Vibe |
-|---|---|---|
-| Trap | 130–160 | Dark, hard-hitting |
-| Lo-fi | 70–90 | Warm, dusty, chill |
-| House | 120–128 | Driving, groovy |
-| Drill | 140–145 | Aggressive, sliding bass |
-| Hyperpop | 140–170 | Chaotic, detuned, glitchy |
+This re-runs `scripts/renderSounds.mjs` and rebuilds every genre’s WAV files from scratch.
 
 ---
 
-## Features
+## Scripts
 
-- **6-track step sequencer** — kick, snare, hi-hat, melody, bass, FX
-- **Per-genre color themes** applied dynamically via CSS custom properties
-- **Sound browser** — swap sounds per track with live preview
-- **Transport controls** — play/stop, BPM slider, 1/2/4-bar pattern length
-- **Mute / solo / volume** per track
-- **Swing** control (0–100)
-- **Save & load** beats via Supabase (auth-gated)
-- **Share** — public URL at `/beat/[shareId]` with playback and "Make your own" CTA
-- **Export** — client-side MP3 (via lamejs) or WAV render using `OfflineAudioContext`
-- **Milestone tracker** — progress toward your first 3 saved beats
-- **Onboarding tooltips** — 3-step first-run guide stored in `localStorage`
-- **Mobile-first** — designed for 375px, fully functional on iOS Safari and Chrome
-
----
-
-## Environment Variables
-
-| Variable | Description |
+| Script | Description |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) |
-| `NEXT_PUBLIC_APP_URL` | Base URL of the app (used for share links) |
+| `npm run dev` | Start the dev server (Turbopack) |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run test` | Run the Vitest suite once |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run test:coverage` | Run the suite with v8 coverage |
+| `npm run generate-sounds` | Regenerate `public/sounds/` via `scripts/renderSounds.mjs` |
+
+Coverage is enforced at **≥80%** (lines, functions, branches, statements) for the covered set defined in `vitest.config.ts` — currently `src/lib/`, `src/audio/voice.ts`, `src/data/genres.ts`, `src/data/sounds.ts`, `src/theme/skins.ts`, and `scripts/renderSounds.mjs`.
+
+---
+
+## CI / Deployment
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request against **Node 24**: `npm ci` → `typecheck` → `test:coverage` → `generate-sounds` → `build`.
+
+Deployment is via Vercel’s Git integration — no manual deploy step, no separate infrastructure to provision.
 
 ---
 
 ## Audio Notes
 
-- `Tone.start()` is called on the first user gesture (genre tap) to satisfy browser autoplay policies, including iOS Safari.
-- The app listens for `visibilitychange` events to resume the `AudioContext` when the user returns to the tab.
-- Sound files are served from `/public/sounds/` in dev and from a CDN (Cloudflare R2) in production.
-- The `getSoundUrl()` helper selects `.m4a` on iOS Safari and `.ogg` everywhere else.
+- `Tone.start()` is called on the first user gesture (the genre tap) to satisfy browser autoplay policies, including iOS Safari.
+- The app listens for `visibilitychange` to resume the `AudioContext` when the user returns to the tab.
+- Drum/FX sounds are pre-rendered WAVs served from `public/sounds/<genre>/`; bass and melody are synthesized live by Tone.js — see “Audio Architecture” above.
 
 ---
 
