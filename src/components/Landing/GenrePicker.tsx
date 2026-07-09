@@ -6,7 +6,7 @@ import styled from '@emotion/styled';
 import { motion, useReducedMotion } from 'motion/react';
 import { Genre } from '@/types';
 import { GENRES, GENRE_LIST } from '@/data/genres';
-import { SKINS, skinToCssVars } from '@/theme/skins';
+import { SKINS, skinToCssVars, skinEasingToBezier } from '@/theme/skins';
 import { DISPLAY_FONT_CLASS } from '@/theme/fonts';
 import { initAudio } from '@/audio/engine';
 import { useTransportStore } from '@/stores/useTransportStore';
@@ -112,8 +112,9 @@ function getCardAnimation(prefersReducedMotion: boolean, isPicked: boolean, isOt
  * a shimmering `MiniGrid` preview of its signature pattern. Tapping a card
  * boots the audio engine (inside the click handler, for the iOS user-gesture
  * requirement), seeds the grid store with that genre, plays a short "morph"
- * — the chosen card grows while its siblings fade — then navigates to the
- * studio already in that genre's skin.
+ * — the chosen card grows while its siblings fade, eased with that card's
+ * own `motion.easing` — then navigates to the studio already in that
+ * genre's skin.
  */
 export default function GenrePicker({ id }: GenrePickerProps) {
   const router = useRouter();
@@ -156,7 +157,7 @@ export default function GenrePicker({ id }: GenrePickerProps) {
               aria-label={`Pick ${genre.label} — ${genre.tagline}`}
               whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
               animate={getCardAnimation(!!prefersReducedMotion, isPicked, isOther)}
-              transition={{ duration: MORPH_MS / 1000, ease: 'easeOut' }}
+              transition={{ duration: MORPH_MS / 1000, ease: skinEasingToBezier(skin.motion.easing) }}
             >
               <PreviewFrame style={skinToCssVars(skin)}>
                 <MiniGrid grid={genre.template.grid} cellSize={7} gap={2} />

@@ -4,6 +4,8 @@ import styled from '@emotion/styled';
 import { motion, useReducedMotion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import { focusRing } from './focusRing';
+import { useGridStore } from '@/stores/useGridStore';
+import { SKINS, skinEasingToBezier } from '@/theme/skins';
 
 /**
  * Visual treatment for the `active` state.
@@ -97,7 +99,8 @@ export interface IconButtonProps {
  * requires an `aria-label` (via the `label` prop) since it renders no
  * visible text. Glow/hover treatment reads the active genre skin's CSS
  * custom properties, and the press animation is a Motion `whileTap` scale
- * (skipped when the user prefers reduced motion).
+ * eased with the active genre's `motion.easing` (skipped when the user
+ * prefers reduced motion).
  */
 export default function IconButton({
   icon: Icon,
@@ -109,6 +112,8 @@ export default function IconButton({
   disabled = false,
 }: IconButtonProps) {
   const prefersReducedMotion = useReducedMotion();
+  const genre = useGridStore((s) => s.genre);
+  const easing = skinEasingToBezier(SKINS[genre].motion.easing);
   const iconSize = Math.round(size * 0.5);
 
   return (
@@ -123,7 +128,7 @@ export default function IconButton({
       $activeVariant={activeVariant}
       $size={size}
       whileTap={prefersReducedMotion ? undefined : { scale: 0.88 }}
-      transition={{ duration: 0.1 }}
+      transition={{ duration: 0.1, ease: easing }}
     >
       <Icon size={iconSize} strokeWidth={2.25} aria-hidden="true" />
     </StyledButton>

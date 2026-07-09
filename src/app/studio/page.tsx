@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import styled from '@emotion/styled';
 import AppShell from '@/components/Layout/AppShell';
 import StudioHeader from '@/components/Studio/StudioHeader';
+import StudioHint from '@/components/Studio/StudioHint';
 import StepGrid from '@/components/Grid/StepGrid';
 import TransportBar from '@/components/Transport/TransportBar';
 import TrackControls from '@/components/TrackRow/TrackControls';
@@ -53,6 +54,7 @@ export default function StudioPage() {
         <StudioHeader onShare={() => setShareModalOpen(true)} onExport={() => setExportModalOpen(true)} />
 
         <GridSection>
+          <StudioHint />
           <StepGrid />
         </GridSection>
 
