@@ -1,21 +1,13 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { decodeBeatFromUrl } from '@/lib/utils';
+import { firstBar } from '@/lib/beatPreview';
 import { GENRES } from '@/data/genres';
 import { SKINS, GenreSkin } from '@/theme/skins';
-import { GenreDefinition, GridState, STEPS_PER_BAR, TRACK_ORDER } from '@/types';
+import { GenreDefinition, GridState, TRACK_ORDER } from '@/types';
 
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
-
-/** Trims a decoded beat's grid down to its first bar (16 steps) per track, matching the preview shown on the beat page itself. */
-function firstBar(grid: GridState): GridState {
-  const trimmed = {} as GridState;
-  for (const track of TRACK_ORDER) {
-    trimmed[track] = grid[track].slice(0, STEPS_PER_BAR);
-  }
-  return trimmed;
-}
 
 /** Generic branded card used when `b` is missing, malformed, or names an unknown genre. */
 function FallbackCard() {

@@ -7,6 +7,7 @@ import styled from '@emotion/styled';
 import { motion, useReducedMotion } from 'motion/react';
 import { Play, Square, Sparkles } from 'lucide-react';
 import { decodeBeatFromUrl, formatBPM } from '@/lib/utils';
+import { firstBar } from '@/lib/beatPreview';
 import { useGridStore } from '@/stores/useGridStore';
 import { useTransportStore } from '@/stores/useTransportStore';
 import { GENRES } from '@/data/genres';
@@ -17,7 +18,7 @@ import { loadAllSounds } from '@/audio/soundLoader';
 import { startPlayback, stopPlayback, createSequence } from '@/audio/sequencer';
 import { focusRing } from '@/components/common/focusRing';
 import MiniGrid from '@/components/Landing/MiniGrid';
-import { GridState, STEPS_PER_BAR, TRACK_ORDER } from '@/types';
+import { STEPS_PER_BAR } from '@/types';
 
 const Page = styled.div`
   position: relative;
@@ -170,13 +171,22 @@ const FallbackText = styled.p`
   color: rgba(255, 255, 255, 0.65);
 `;
 
-/** Trims a decoded beat's grid down to its first bar (16 steps) per track, for a consistent-sized preview regardless of the original pattern length. */
-function firstBar(grid: GridState): GridState {
-  const trimmed = {} as GridState;
-  for (const track of TRACK_ORDER) {
-    trimmed[track] = grid[track].slice(0, STEPS_PER_BAR);
-  }
-  return trimmed;
+/** Valid pattern lengths (in bars), matching {@link Project.pattern_length}. */
+const PATTERN_LENGTHS: readonly (1 | 2 | 4)[] = [1, 2, 4];
+
+/**
+ * Rounds a step count to whole bars and snaps to the nearest supported
+ * pattern length (1, 2, or 4 bars), defaulting to 1 bar for zero, negative,
+ * or otherwise out-of-range input. Used to recover `patternLength` from a
+ * decoded share link's raw grid length, which the URL encoding doesn't
+ * store directly.
+ * @param totalSteps - Total step count of a decoded track's grid row.
+ */
+function toPatternLength(totalSteps: number): 1 | 2 | 4 {
+  const bars = Math.round(totalSteps / STEPS_PER_BAR);
+  return PATTERN_LENGTHS.reduce((closest, candidate) =>
+    Math.abs(candidate - bars) < Math.abs(closest - bars) ? candidate : closest
+  );
 }
 
 /**
@@ -211,7 +221,7 @@ export default function BeatContent() {
     useGridStore.getState().loadProject({
       genre: decoded.genre,
       bpm: decoded.bpm,
-      pattern_length: (Math.max(1, Math.round(decoded.grid.kick.length / STEPS_PER_BAR)) as 1 | 2 | 4) || 1,
+      pattern_length: toPatternLength(decoded.grid.kick.length),
       swing: 0,
       grid: decoded.grid,
       sounds: decoded.sounds,
