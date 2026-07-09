@@ -1,10 +1,11 @@
 import type * as ToneTypes from 'tone';
 import { getTone } from './tone';
+import { getVoice, setGain } from './synthKit';
+import { GENRES } from '@/data/genres';
 import { useGridStore } from '@/stores/useGridStore';
 import { useTransportStore } from '@/stores/useTransportStore';
-import { TrackCategory, TRACK_ORDER } from '@/types';
+import { TRACK_ORDER } from '@/types';
 
-const players: Record<string, ToneTypes.Player> = {};
 let sequence: ToneTypes.Sequence | null = null;
 
 /**
@@ -25,7 +26,7 @@ export function createSequence() {
 
   sequence = new Tone.Sequence(
     (time, step) => {
-      const { grid, volumes, mutes, solos } = useGridStore.getState();
+      const { genre, grid, volumes, mutes, solos } = useGridStore.getState();
       useTransportStore.getState().setCurrentStep(step);
 
       const hasSolo = TRACK_ORDER.some(t => solos[t]);
@@ -35,11 +36,13 @@ export function createSequence() {
         if (hasSolo && !solos[track]) continue;
 
         if (grid[track][step] === 1) {
-          const player = players[track];
-          if (player?.loaded) {
-            player.volume.value = Tone.gainToDb(volumes[track]);
-            player.start(time);
-          }
+          const note =
+            track === 'melody' || track === 'bass'
+              ? (GENRES[genre].noteRows?.[track]?.[step % 16] ?? undefined)
+              : undefined;
+
+          setGain(track, volumes[track]);
+          getVoice(track)?.trigger(time, note);
         }
       }
     },
@@ -49,21 +52,6 @@ export function createSequence() {
 
   sequence.loop = true;
   return sequence;
-}
-
-/**
- * Loads an audio sample into a Tone.js Player for the given track,
- * disposing of any previously loaded player for that track.
- * @param track - The track category to load the sound into.
- * @param url - URL of the audio file to load.
- */
-export async function loadSound(track: TrackCategory, url: string) {
-  const Tone = getTone();
-  if (players[track]) {
-    players[track].dispose();
-  }
-  players[track] = new Tone.Player(url).toDestination();
-  await Tone.loaded();
 }
 
 /**
@@ -108,13 +96,4 @@ export function disposeSequence() {
     sequence.dispose();
     sequence = null;
   }
-}
-
-/**
- * Returns the Tone.js Player instance for a given track, if one is loaded.
- * @param track - The track category to look up.
- * @returns The Player instance, or `undefined` if no sound is loaded for the track.
- */
-export function getPlayer(track: TrackCategory): ToneTypes.Player | undefined {
-  return players[track];
 }

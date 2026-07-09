@@ -1,8 +1,7 @@
 import { TrackCategory } from '@/types';
 import { useGridStore } from '@/stores/useGridStore';
 import { GENRES } from '@/data/genres';
-import { getSound, getSoundUrl } from '@/data/sounds';
-import { loadSound } from './sequencer';
+import { getSound } from '@/data/sounds';
 import { buildKit } from './synthKit';
 
 /**
@@ -20,20 +19,19 @@ export async function loadAllSounds(): Promise<void> {
 }
 
 // TODO(Task 9): swapSound + catalog-derived kit — reframe below to resolve
-// SoundVariant.spec from the catalog instead of the legacy file-based
-// SoundDefinition, once `getSound` returns SoundVariant.
+// SoundVariant.spec from the catalog and rebuild the affected track's Voice
+// via synthKit, once `getSound` returns SoundVariant instead of the legacy
+// file-based SoundDefinition. For now this only updates the grid store's
+// sound assignment; the sequencer plays the genre kit built by `buildKit`.
 
 /**
- * Replaces the sound for a single track by loading the new sample and
- * updating the grid store assignment.
+ * Replaces the sound assignment for a single track.
  * @param track - The track category whose sound should be swapped.
- * @param soundId - The identifier of the new sound to load.
+ * @param soundId - The identifier of the new sound to assign.
  */
 export async function swapSound(track: TrackCategory, soundId: string): Promise<void> {
   const soundDef = getSound(soundId);
   if (soundDef) {
-    const url = getSoundUrl(soundDef);
-    await loadSound(track, url);
     useGridStore.getState().setSound(track, soundId);
   }
 }
