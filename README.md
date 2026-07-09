@@ -107,8 +107,8 @@ public/
 ### Install and run
 
 ```bash
-git clone https://github.com/your-org/ni-play.git
-cd ni-play
+git clone https://github.com/mrballistic-slalom/ni-demo.git
+cd ni-demo
 npm install
 npm run dev
 ```
