@@ -213,11 +213,20 @@ export default function BeatContent() {
   const audioInitedRef = useRef(false);
   const loadPromiseRef = useRef<Promise<void> | null>(null);
 
-  // Hydrate the shared grid store so the genre skin applies app-wide and the
-  // sequencer/sound-loader (which always read the store, not props) play
-  // the shared beat rather than whatever was last saved locally.
+  // `useGridStore` is the SAME zustand store /studio persists to
+  // localStorage. Hydrating it here (so the genre skin applies app-wide and
+  // the sequencer/sound-loader, which always read the store, play the
+  // shared beat) would otherwise clobber a visitor's unsaved /studio work.
+  // Snapshot the visitor's persisted state before loading the preview, and
+  // restore it on unmount/param-change, so localStorage is left exactly as
+  // it was once they navigate away from /beat.
+  const studioSnapshotRef = useRef<ReturnType<typeof useGridStore.getState> | null>(null);
+
   useEffect(() => {
     if (!decoded) return;
+
+    studioSnapshotRef.current = useGridStore.getState();
+
     useGridStore.getState().loadProject({
       genre: decoded.genre,
       bpm: decoded.bpm,
@@ -227,6 +236,24 @@ export default function BeatContent() {
       sounds: decoded.sounds,
       volumes: decoded.volumes,
     });
+
+    return () => {
+      const snapshot = studioSnapshotRef.current;
+      if (!snapshot) return;
+      useGridStore.setState({
+        genre: snapshot.genre,
+        bpm: snapshot.bpm,
+        patternLength: snapshot.patternLength,
+        swing: snapshot.swing,
+        grid: snapshot.grid,
+        sounds: snapshot.sounds,
+        volumes: snapshot.volumes,
+        mutes: snapshot.mutes,
+        solos: snapshot.solos,
+        modificationsCount: snapshot.modificationsCount,
+      });
+      studioSnapshotRef.current = null;
+    };
   }, [decoded]);
 
   // Stop playback if the visitor navigates away (e.g. taps "Make your own")
