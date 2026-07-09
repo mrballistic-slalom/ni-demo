@@ -124,11 +124,27 @@ export default function SoundBrowser({ open, onClose, track }: SoundBrowserProps
   const currentSoundId = useGridStore((s) => (track ? s.sounds[track] : null));
   const originalSoundIdRef = useRef<string | null>(null);
 
+  // Local intent tracking so cancel-on-dismiss is race-safe against
+  // `swapSound`'s deferred store write (it only writes after `await
+  // Tone.loaded()`). `previewedSoundIdRef` records that *a* preview was
+  // tapped (set synchronously, unlike the store); `confirmedRef` records
+  // that the user explicitly kept the change. `cancelledRef` +
+  // `generationRef` let a preview swap that resolves *after* a dismiss
+  // detect it's stale and undo itself instead of clobbering the revert.
+  const previewedSoundIdRef = useRef<string | null>(null);
+  const confirmedRef = useRef(false);
+  const cancelledRef = useRef(false);
+  const generationRef = useRef(0);
+
   // Remember the sound that was assigned when the sheet opened, so an
-  // unconfirmed dismissal can revert to it.
+  // unconfirmed dismissal can revert to it, and reset intent tracking for
+  // the new session.
   useEffect(() => {
     if (open && track) {
       originalSoundIdRef.current = useGridStore.getState().sounds[track];
+      previewedSoundIdRef.current = null;
+      confirmedRef.current = false;
+      cancelledRef.current = false;
     }
   }, [open, track]);
 
@@ -137,8 +153,26 @@ export default function SoundBrowser({ open, onClose, track }: SoundBrowserProps
   const handlePreview = useCallback(
     (soundId: string) => {
       if (!track) return;
+      previewedSoundIdRef.current = soundId;
+      const requestId = ++generationRef.current;
       void (async () => {
         await swapSound(track, soundId);
+
+        // If something newer happened while this swap was in flight (a
+        // later preview tap, or a dismiss that cancelled this one), this
+        // write is stale. Undo/ignore it instead of leaving it in place:
+        // re-apply whichever target is actually authoritative now.
+        if (requestId !== generationRef.current) {
+          if (confirmedRef.current) return;
+          const correctTarget = cancelledRef.current
+            ? originalSoundIdRef.current
+            : previewedSoundIdRef.current;
+          if (correctTarget && correctTarget !== soundId) {
+            void swapSound(track, correctTarget);
+          }
+          return;
+        }
+
         try {
           getVoice(track)?.trigger(getTone().now());
         } catch {
@@ -150,13 +184,21 @@ export default function SoundBrowser({ open, onClose, track }: SoundBrowserProps
   );
 
   const handleConfirm = useCallback(() => {
+    confirmedRef.current = true;
     onClose();
   }, [onClose]);
 
   const handleDismiss = useCallback(() => {
-    const original = originalSoundIdRef.current;
-    if (track && original && original !== useGridStore.getState().sounds[track]) {
-      void swapSound(track, original);
+    if (track && !confirmedRef.current && previewedSoundIdRef.current !== null) {
+      cancelledRef.current = true;
+      // Invalidate any in-flight preview swap so its continuation (above)
+      // detects it's stale and re-corrects to the original on resolve,
+      // regardless of resolution order relative to this revert.
+      generationRef.current += 1;
+      const original = originalSoundIdRef.current;
+      if (original) {
+        void swapSound(track, original);
+      }
     }
     onClose();
   }, [track, onClose]);

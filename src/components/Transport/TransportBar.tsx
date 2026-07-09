@@ -151,7 +151,15 @@ export default function TransportBar() {
   const ensureSoundsLoaded = useCallback((): Promise<void> => {
     if (!loadPromiseRef.current || loadedGenreRef.current !== genre) {
       loadedGenreRef.current = genre;
-      loadPromiseRef.current = loadAllSounds();
+      loadPromiseRef.current = loadAllSounds().catch((e) => {
+        // Only cache the promise on success -- a rejected promise is
+        // truthy, so leaving it cached would make every subsequent caller
+        // (mount effect, every Play tap) re-await the same failure forever.
+        // Clear the cache so the next call retries a fresh load.
+        loadPromiseRef.current = null;
+        loadedGenreRef.current = null;
+        throw e;
+      });
     }
     return loadPromiseRef.current;
   }, [genre]);
@@ -166,7 +174,15 @@ export default function TransportBar() {
       stopPlayback();
       useTransportStore.getState().setPlaying(false);
     } else {
-      await ensureSoundsLoaded();
+      try {
+        await ensureSoundsLoaded();
+      } catch (e) {
+        // Sound load failed -- leave the transport stopped so a later
+        // Play tap can retry (see ensureSoundsLoaded's cache-clear above)
+        // instead of throwing uncaught out of this click handler.
+        console.error('Failed to load sounds for playback:', e);
+        return;
+      }
       createSequence();
       startPlayback();
       useTransportStore.getState().setPlaying(true);
