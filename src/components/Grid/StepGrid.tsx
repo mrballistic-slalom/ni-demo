@@ -2,35 +2,25 @@
 
 import { useCallback } from 'react';
 import styled from '@emotion/styled';
-import { Drum, Disc, Disc3, Piano, Guitar, Sparkles } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import GridCell from './GridCell';
 import Playhead from './Playhead';
 import { useGridStore } from '@/stores/useGridStore';
 import { useTransportStore } from '@/stores/useTransportStore';
 import { SKINS } from '@/theme/skins';
+import { TRACK_ICONS, TRACK_LABELS } from '@/data/trackMeta';
 import { TRACK_ORDER, TrackCategory, STEPS_PER_BAR } from '@/types';
 
-const TRACK_LABELS: Record<TrackCategory, string> = {
-  kick: 'KICK',
-  snare: 'SNARE',
-  hihat: 'HI-HAT',
-  melody: 'MELODY',
-  bass: 'BASS',
-  fx: 'FX',
-};
+/** Fixed width (px) reserved for the icon label column; kept in sync with the playhead's left offset. */
+const LABEL_WIDTH = 22;
 
-const TRACK_ICONS: Record<TrackCategory, LucideIcon> = {
-  kick: Drum,
-  snare: Disc,
-  hihat: Disc3,
-  melody: Piano,
-  bass: Guitar,
-  fx: Sparkles,
-};
-
-/** Fixed width (px) reserved for the icon + label column; kept in sync with the playhead's left offset. */
-const LABEL_WIDTH = 64;
+/**
+ * The genre skin's `--genre-cell-gap` can be up to 5px, which is fine for a
+ * 44px-min cell but doesn't leave enough room for 16 columns at an
+ * 18px-min cell width on a 375px viewport. Clamping it keeps each skin's
+ * gap distinct (2-3px of variation survives) while guaranteeing a 1-bar
+ * pattern always fits without horizontal scroll.
+ */
+const STEP_GAP = 'clamp(2px, var(--genre-cell-gap), 3px)';
 
 const ScrollArea = styled.div`
   overflow-x: auto;
@@ -42,24 +32,24 @@ const GridBody = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--genre-cell-gap);
-  min-width: 100%;
-  width: fit-content;
+  gap: ${STEP_GAP};
+  width: 100%;
 `;
 
 const TrackRow = styled.div`
   display: flex;
   align-items: center;
-  gap: var(--genre-cell-gap);
+  gap: ${STEP_GAP};
+  min-width: 0;
 `;
 
 const TrackLabel = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   width: ${LABEL_WIDTH}px;
+  height: 44px;
   flex-shrink: 0;
-  padding: 2px 4px;
   border-radius: var(--genre-cell-radius, 4px);
   background: var(--genre-surface);
   color: var(--genre-text-dim);
@@ -68,39 +58,37 @@ const TrackLabel = styled.div`
   z-index: 2;
 `;
 
-const LabelText = styled.span`
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  color: var(--genre-text-dim);
-`;
-
 const CellRow = styled.div<{ $steps: number }>`
+  --step-gap: ${STEP_GAP};
   flex: 1;
+  min-width: 0;
   display: grid;
-  grid-template-columns: repeat(${(p) => p.$steps}, minmax(44px, 1fr));
-  gap: var(--genre-cell-gap);
-  height: 48px;
+  grid-template-columns: repeat(${(p) => p.$steps}, minmax(18px, 1fr));
+  gap: var(--step-gap);
+  height: 44px;
 `;
 
 const PlayheadLayer = styled.div`
   position: absolute;
   top: 0;
   bottom: 0;
-  left: calc(${LABEL_WIDTH}px + var(--genre-cell-gap));
+  left: calc(${LABEL_WIDTH}px + ${STEP_GAP});
   right: 0;
   z-index: 1;
 `;
 
 /**
- * Renders the full step-sequencer grid: one row per track, each with an
- * instrument icon + short label followed by `patternLength * STEPS_PER_BAR`
- * {@link GridCell} steps laid out in a CSS grid. Scrolls horizontally
- * (track labels stay pinned via `position: sticky`) when the pattern is
- * wider than the viewport. A single {@link Playhead} beam is layered over
- * the cell columns (excluding the label rail) and sweeps in sync with the
- * transport's `currentStep`.
+ * Renders the full step-sequencer grid: one row per track, each with a
+ * small instrument icon (full names live in {@link TrackControls} below)
+ * followed by `patternLength * STEPS_PER_BAR` {@link GridCell} steps laid
+ * out in a CSS grid. A 1-bar (16-step) pattern is sized to fit a 375px
+ * viewport without horizontal scroll -- cells flex down to an 18px floor
+ * and the inter-cell gap is clamped (see {@link STEP_GAP}) so the grid
+ * never needs more room than that. Longer patterns (2/4 bars) still
+ * overflow and scroll horizontally once cells hit that floor (track
+ * labels stay pinned via `position: sticky`). A single {@link Playhead}
+ * beam is layered over the cell columns (excluding the label rail) and
+ * sweeps in sync with the transport's `currentStep`.
  *
  * Reads `grid`/`patternLength`/`toggleCell` from {@link useGridStore} and
  * `currentStep` from {@link useTransportStore}; the active genre's
@@ -131,9 +119,8 @@ export default function StepGrid() {
           const Icon = TRACK_ICONS[track];
           return (
             <TrackRow key={track}>
-              <TrackLabel>
+              <TrackLabel aria-label={TRACK_LABELS[track]} title={TRACK_LABELS[track]}>
                 <Icon size={14} strokeWidth={2.25} aria-hidden="true" />
-                <LabelText>{TRACK_LABELS[track]}</LabelText>
               </TrackLabel>
               <CellRow $steps={totalSteps}>
                 {Array.from({ length: totalSteps }, (_, step) => (
@@ -144,6 +131,7 @@ export default function StepGrid() {
                     active={grid[track]?.[step] === 1}
                     isPlayhead={currentStep === step}
                     hitPop={hitPop}
+                    groupEnd={(step + 1) % 4 === 0 && step !== totalSteps - 1}
                     onToggle={handleToggle}
                   />
                 ))}

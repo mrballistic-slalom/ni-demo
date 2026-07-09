@@ -17,18 +17,20 @@ interface GridCellProps {
   isPlayhead: boolean;
   /** The active genre skin's `hitPop` scale factor, used for the on-beat pop animation. */
   hitPop: number;
+  /** Whether this step is the last in a group of 4 (but not the final step overall), rendered with extra trailing space to visually separate beat groups. */
+  groupEnd?: boolean;
   /** Callback invoked when the cell is clicked. */
   onToggle: (track: TrackCategory, step: number) => void;
 }
 
 const isBeatMarker = (step: number) => step % 4 === 0;
 
-const Cell = styled(motion.button)<{ $active: boolean; $beat: boolean }>`
+const Cell = styled(motion.button)<{ $active: boolean; $beat: boolean; $groupEnd: boolean }>`
   appearance: none;
   width: 100%;
   height: 100%;
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 18px;
+  min-height: 18px;
   padding: 0;
   border: none;
   border-radius: var(--genre-cell-radius, 4px);
@@ -41,6 +43,7 @@ const Cell = styled(motion.button)<{ $active: boolean; $beat: boolean }>`
   outline: ${(p) => (p.$beat && !p.$active ? '1px solid rgba(255, 255, 255, 0.14)' : 'none')};
   outline-offset: -1px;
   filter: ${(p) => (p.$beat && !p.$active ? 'brightness(1.18)' : 'none')};
+  margin-right: ${(p) => (p.$groupEnd ? 'var(--step-gap, var(--genre-cell-gap))' : '0')};
   transition: background-color 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 
   &:hover {
@@ -77,6 +80,7 @@ const GridCell = memo(function GridCell({
   active,
   isPlayhead,
   hitPop,
+  groupEnd = false,
   onToggle,
 }: GridCellProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -90,6 +94,7 @@ const GridCell = memo(function GridCell({
       onClick={() => onToggle(track, step)}
       $active={active}
       $beat={isBeatMarker(step)}
+      $groupEnd={groupEnd}
       animate={shouldPop ? { scale: [1, hitPop, 1] } : { scale: 1 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
     />
