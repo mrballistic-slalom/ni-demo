@@ -1,7 +1,7 @@
 import type * as ToneTypes from 'tone';
 import { getTone } from './tone';
 import { createVoice, Voice } from './voice';
-import { GenreKit, TrackCategory, TRACK_ORDER } from '@/types';
+import { GenreKit, TrackCategory, TRACK_ORDER, VoiceSpec } from '@/types';
 
 /** Minimal shape needed to connect a Voice's output into a downstream node. */
 interface Connectable {
@@ -15,15 +15,20 @@ const gains: Partial<Record<TrackCategory, ToneTypes.Gain>> = {};
  * Builds the current genre's kit of audio voices, one per track, each routed
  * through its own `Tone.Gain` node into the master destination. Disposes any
  * previously built kit first so repeated genre switches don't leak nodes.
+ * Tracks with no resolvable spec are simply skipped (left silent) rather
+ * than throwing.
  * @param kit - Map of track category to voice specification for the genre.
+ *   May be partial — a track missing from it is skipped.
  */
-export async function buildKit(kit: GenreKit): Promise<void> {
+export async function buildKit(kit: Partial<GenreKit>): Promise<void> {
   disposeKit();
 
   const Tone = getTone();
 
   for (const track of TRACK_ORDER) {
     const spec = kit[track];
+    if (!spec) continue;
+
     const voice = createVoice(spec);
     const gain = new Tone.Gain(1);
     (voice.output as Connectable).connect(gain);
@@ -32,6 +37,34 @@ export async function buildKit(kit: GenreKit): Promise<void> {
     voices[track] = voice;
     gains[track] = gain;
   }
+
+  await Tone.loaded();
+}
+
+/**
+ * Replaces a single track's voice in place, without rebuilding the whole
+ * kit. Disposes the track's existing voice (if any) and creates a new one
+ * from `spec`, reconnecting it through the track's existing `Tone.Gain`
+ * node (creating one if the kit hasn't been built yet). This preserves the
+ * track's current gain/mute level across a sound swap.
+ * @param track - The track category whose voice should be replaced.
+ * @param spec - The new voice specification to build and connect.
+ */
+export async function setVoice(track: TrackCategory, spec: VoiceSpec): Promise<void> {
+  const Tone = getTone();
+
+  voices[track]?.dispose();
+
+  const voice = createVoice(spec);
+  let gain = gains[track];
+  if (!gain) {
+    gain = new Tone.Gain(1);
+    gain.connect(Tone.getDestination());
+    gains[track] = gain;
+  }
+  (voice.output as Connectable).connect(gain);
+
+  voices[track] = voice;
 
   await Tone.loaded();
 }
