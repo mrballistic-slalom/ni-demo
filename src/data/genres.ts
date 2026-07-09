@@ -10,6 +10,19 @@ import { getSound } from './sounds';
 const p = (pattern: string): number[] => pattern.split('').map(c => c === 'x' ? 1 : 0);
 
 /**
+ * Builds a genre's default sound selections: every genre uses each track's
+ * "01" catalog variant (e.g. `trap_kick_01`), so the id can be derived
+ * rather than spelled out per track.
+ */
+function defaultSounds(genre: Genre): SoundSelections {
+  const sounds = {} as SoundSelections;
+  for (const track of TRACK_ORDER) {
+    sounds[track] = `${genre}_${track}_01`;
+  }
+  return sounds;
+}
+
+/**
  * Builds a genre's `kit` from its template's default sound selections, so
  * the kit and template can never drift out of sync: each track's voice spec
  * is looked up live from the sound catalog rather than duplicated by hand.
@@ -27,14 +40,7 @@ function kitFromSounds(sounds: SoundSelections): GenreKit {
 }
 
 // ── Trap ────────────────────────────────────────────────────────────────
-const trapSounds: SoundSelections = {
-  kick: 'trap_kick_01',
-  snare: 'trap_snare_01',
-  hihat: 'trap_hihat_01',
-  melody: 'trap_melody_01',
-  bass: 'trap_bass_01',
-  fx: 'trap_fx_01',
-};
+const trapSounds: SoundSelections = defaultSounds('trap');
 // F minor: sparse dark melody on the b6/root/b3, 808 sliding between root and fifth.
 const trapMelody: NoteRow = [
   'Ab3', null, null, null, null, null, 'C4', null, null, null, 'Eb4', null, null, null, null, null,
@@ -44,14 +50,7 @@ const trapBass: NoteRow = [
 ];
 
 // ── Lo-Fi ───────────────────────────────────────────────────────────────
-const lofiSounds: SoundSelections = {
-  kick: 'lofi_kick_01',
-  snare: 'lofi_snare_01',
-  hihat: 'lofi_hihat_01',
-  melody: 'lofi_melody_01',
-  bass: 'lofi_bass_01',
-  fx: 'lofi_fx_01',
-};
+const lofiSounds: SoundSelections = defaultSounds('lofi');
 // Cmaj7 arpeggio for the mellow keys, soft root-fifth bass.
 const lofiMelody: NoteRow = [
   'C4', null, null, 'E4', null, null, 'G4', null, null, 'B4', null, null, 'E4', null, null, null,
@@ -61,14 +60,7 @@ const lofiBass: NoteRow = [
 ];
 
 // ── House ───────────────────────────────────────────────────────────────
-const houseSounds: SoundSelections = {
-  kick: 'house_kick_01',
-  snare: 'house_snare_01',
-  hihat: 'house_hihat_01',
-  melody: 'house_melody_01',
-  bass: 'house_bass_01',
-  fx: 'house_fx_01',
-};
+const houseSounds: SoundSelections = defaultSounds('house');
 // Bright chord stabs land on the off-beat 8ths; walking root/fifth bass under the four-on-the-floor kick.
 const houseMelody: NoteRow = [
   null, null, 'C5', null, null, null, 'E5', null, null, null, 'G5', null, null, null, 'E5', null,
@@ -78,14 +70,7 @@ const houseBass: NoteRow = [
 ];
 
 // ── Drill ───────────────────────────────────────────────────────────────
-const drillSounds: SoundSelections = {
-  kick: 'drill_kick_01',
-  snare: 'drill_snare_01',
-  hihat: 'drill_hihat_01',
-  melody: 'drill_melody_01',
-  bass: 'drill_bass_01',
-  fx: 'drill_fx_01',
-};
+const drillSounds: SoundSelections = defaultSounds('drill');
 // G minor: gliding 808 between root and fifth (below), dark sparse keys.
 const drillMelody: NoteRow = [
   'Bb3', null, null, null, null, null, null, null, null, null, null, null, 'D4', null, null, null,
@@ -95,14 +80,7 @@ const drillBass: NoteRow = [
 ];
 
 // ── Hyperpop ────────────────────────────────────────────────────────────
-const hyperpopSounds: SoundSelections = {
-  kick: 'hyperpop_kick_01',
-  snare: 'hyperpop_snare_01',
-  hihat: 'hyperpop_hihat_01',
-  melody: 'hyperpop_melody_01',
-  bass: 'hyperpop_bass_01',
-  fx: 'hyperpop_fx_01',
-};
+const hyperpopSounds: SoundSelections = defaultSounds('hyperpop');
 // High, bright, pitched-up melody; bouncy octave-jumping 808 for the sugar-rush distortion.
 const hyperpopMelody: NoteRow = [
   'C6', null, 'E6', null, null, null, 'G6', null, 'C6', null, null, null, 'E6', null, null, null,
