@@ -98,10 +98,10 @@ export interface GenreDefinition {
   colorSecondary: string;
   colorAccent: string;
   template: GenreTemplate;
-  kit?: GenreKit;
-  noteRows?: { melody: NoteRow; bass: NoteRow };
-  tagline?: string;
-  hook?: string;
+  kit: GenreKit;
+  noteRows: { melody: NoteRow; bass: NoteRow };
+  tagline: string;
+  hook: string;
 }
 
 /** Default grid pattern, sound selections, and volumes for a genre preset. */
