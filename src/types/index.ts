@@ -63,22 +63,32 @@ export interface SoundDefinition {
   file_aac: string;
 }
 
-export type NoteRow = (string | null)[]; // length 16; note name (e.g. 'C2') or null
+/** A track's per-step note assignments (length 16); each entry is a note name (e.g. 'C2') or null. */
+export type NoteRow = (string | null)[];
 
+/** Specification for a sample-based voice that plays a single audio file. */
 export interface SampleVoiceSpec {
   kind: 'sample';
-  url: string;          // resolved via getSoundUrl
+  /** URL of the audio sample, resolved via `getSoundUrl`. */
+  url: string;
 }
+
+/** Specification for a synthesized voice driven by a Tone.js synth. */
 export interface SynthVoiceSpec {
   kind: 'synth';
   synth: 'mono808' | 'fm' | 'poly';
-  options: Record<string, unknown>; // Tone synth options
+  /** Constructor options passed to the underlying Tone.js synth. */
+  options: Record<string, unknown>;
   portamento?: number;
 }
+
+/** Specification for a single track's voice: either sample-based or synthesized. */
 export type VoiceSpec = SampleVoiceSpec | SynthVoiceSpec;
 
+/** Maps each track category to its voice specification for a genre's kit. */
 export type GenreKit = Record<TrackCategory, VoiceSpec>;
 
+/** A selectable sound-catalog entry: a named voice spec for a given track category and genre. */
 export interface SoundVariant {
   id: string;
   name: string;

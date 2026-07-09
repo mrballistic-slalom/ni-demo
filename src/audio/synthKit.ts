@@ -25,8 +25,9 @@ export async function buildKit(kit: GenreKit): Promise<void> {
   for (const track of TRACK_ORDER) {
     const spec = kit[track];
     const voice = createVoice(spec);
-    const gain = new Tone.Gain(1).connect(Tone.getDestination());
+    const gain = new Tone.Gain(1);
     (voice.output as Connectable).connect(gain);
+    gain.connect(Tone.getDestination());
 
     voices[track] = voice;
     gains[track] = gain;
