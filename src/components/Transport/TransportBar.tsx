@@ -11,6 +11,7 @@ import { useTransportStore } from '@/stores/useTransportStore';
 import { startPlayback, stopPlayback, updateBpm, createSequence } from '@/audio/sequencer';
 import { loadAllSounds } from '@/audio/soundLoader';
 import { GENRES } from '@/data/genres';
+import { SKINS, skinEasingToBezier } from '@/theme/skins';
 import type { Genre } from '@/types';
 
 const Bar = styled.div`
@@ -143,6 +144,7 @@ export default function TransportBar() {
   const prefersReducedMotion = useReducedMotion();
 
   const genreDef = GENRES[genre];
+  const easing = skinEasingToBezier(SKINS[genre].motion.easing);
 
   const loadedGenreRef = useRef<Genre | null>(null);
   const loadPromiseRef = useRef<Promise<void> | null>(null);
@@ -246,7 +248,7 @@ export default function TransportBar() {
           aria-label={isPlaying ? 'Stop playback' : 'Start playback'}
           onClick={handlePlayToggle}
           whileTap={prefersReducedMotion ? undefined : { scale: 0.92 }}
-          transition={{ duration: 0.1 }}
+          transition={{ duration: 0.1, ease: easing }}
         >
           {isPlaying ? (
             <Square size={26} fill="currentColor" strokeWidth={0} aria-hidden="true" />

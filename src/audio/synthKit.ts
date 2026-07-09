@@ -10,18 +10,40 @@ interface Connectable {
 
 const voices: Partial<Record<TrackCategory, Voice>> = {};
 const gains: Partial<Record<TrackCategory, ToneTypes.Gain>> = {};
+let masterLimiter: ToneTypes.Limiter | undefined;
+
+/**
+ * Gentle safety-net ceiling (in decibels) for the live master bus, applied
+ * after the destination's own -6dB headroom (`Tone.getDestination().volume`
+ * in `./engine.ts`'s `initAudio`). Catches hard-clipping on unusually dense
+ * patterns without audibly squashing normal playback. Mirrors the offline
+ * export's limiter in `./exporter.ts`.
+ */
+const MASTER_LIMITER_THRESHOLD_DB = -1;
+
+/**
+ * Returns the shared master limiter, creating it (wired to the destination)
+ * on first use.
+ */
+function ensureMasterLimiter(Tone: typeof ToneTypes): ToneTypes.Limiter {
+  if (!masterLimiter) {
+    masterLimiter = new Tone.Limiter(MASTER_LIMITER_THRESHOLD_DB).toDestination();
+  }
+  return masterLimiter;
+}
 
 /**
  * Returns the track's existing `Tone.Gain` node, or creates one (wired to
- * the master destination) if the track doesn't have one yet. Shared by
- * {@link buildKit} and {@link setVoice} so a track's gain/mute level
- * survives both a full kit rebuild and a single-sound swap.
+ * the master destination, via the shared master limiter) if the track
+ * doesn't have one yet. Shared by {@link buildKit} and {@link setVoice} so a
+ * track's gain/mute level survives both a full kit rebuild and a single-sound
+ * swap.
  */
 function ensureGain(track: TrackCategory, Tone: typeof ToneTypes): ToneTypes.Gain {
   let gain = gains[track];
   if (!gain) {
     gain = new Tone.Gain(1);
-    gain.connect(Tone.getDestination());
+    gain.connect(ensureMasterLimiter(Tone));
     gains[track] = gain;
   }
   return gain;

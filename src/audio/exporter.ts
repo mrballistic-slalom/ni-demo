@@ -18,6 +18,23 @@ interface Connectable {
 const RELEASE_TAIL_SECONDS = 2;
 
 /**
+ * Master headroom applied to the offline render, in decibels. Matches the
+ * live engine's `Tone.getDestination().volume.value = -6` (see
+ * `./engine.ts`'s `initAudio`) so a dense pattern that sums close to 0 dBFS
+ * live is rendered at the same relative level in the export, rather than
+ * hard-clipping because the offline bus summed voices straight to 1.0.
+ */
+const MASTER_HEADROOM_DB = -6;
+
+/**
+ * Safety-net ceiling (in decibels) for the offline master bus. Catches any
+ * peak that still exceeds 0 dBFS after `MASTER_HEADROOM_DB` (e.g. an
+ * unusually dense/loud pattern) with a fast limiter rather than letting the
+ * summed signal hard-clip.
+ */
+const MASTER_LIMITER_THRESHOLD_DB = -1;
+
+/**
  * Resolves the voice spec for every track using the same priority as the
  * live engine's `loadAllSounds` (in `./soundLoader`): the grid store's
  * currently selected sound ID first, falling back to the genre's static kit
@@ -65,12 +82,19 @@ export async function renderToWav(): Promise<Blob> {
 
     const voices: Partial<Record<TrackCategory, Voice>> = {};
 
+    // Master bus: mirrors live playback's -6dB destination headroom (see
+    // `MASTER_HEADROOM_DB` above), then a gentle limiter as a hard-clip
+    // safety net for anything that still peaks over 0 dBFS after that.
+    const master = new offlineTone.Volume(MASTER_HEADROOM_DB)
+      .connect(new offlineTone.Limiter(MASTER_LIMITER_THRESHOLD_DB))
+      .toDestination();
+
     for (const track of TRACK_ORDER) {
       const spec = kit[track];
       if (!spec) continue;
 
       const voice = createVoice(spec);
-      const gain = new offlineTone.Gain(volumes[track]).toDestination();
+      const gain = new offlineTone.Gain(volumes[track]).connect(master);
       (voice.output as Connectable).connect(gain);
       voices[track] = voice;
     }

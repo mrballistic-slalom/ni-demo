@@ -109,6 +109,7 @@ export default function TrackControls({ track, onSoundClick }: TrackControlsProp
         icon={muted ? VolumeX : Volume2}
         label={muted ? `Unmute ${track}` : `Mute ${track}`}
         active={muted}
+        activeVariant="muted"
         size={32}
         onClick={() => toggleMute(track)}
       />

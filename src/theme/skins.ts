@@ -58,3 +58,22 @@ export function skinToCssVars(skin: GenreSkin): Record<string, string> {
     '--genre-glow-blur': skin.glow.blur,
   };
 }
+
+/** Fallback bezier (roughly `ease`) used if a skin's easing string can't be parsed. */
+const FALLBACK_BEZIER: [number, number, number, number] = [0.4, 0, 0.2, 1];
+
+/**
+ * Every `GenreSkin.motion.easing` is authored as a CSS
+ * `cubic-bezier(x1,y1,x2,y2)` string (for use directly in CSS
+ * `transition`s), but Motion's `ease` transition option wants the four
+ * numbers as a tuple, not a CSS function string. This converts one to the
+ * other so the same skin-authored easing can drive both CSS transitions
+ * and Motion `animate`/`whileTap` transitions.
+ */
+export function skinEasingToBezier(easing: string): [number, number, number, number] {
+  const match = easing.match(/cubic-bezier\(([^)]+)\)/);
+  if (!match) return FALLBACK_BEZIER;
+  const parts = match[1].split(',').map((n) => parseFloat(n.trim()));
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return FALLBACK_BEZIER;
+  return parts as [number, number, number, number];
+}
