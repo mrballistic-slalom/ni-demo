@@ -1,37 +1,47 @@
-import { TrackCategory } from '@/types';
+import { GenreKit, TrackCategory, TRACK_ORDER } from '@/types';
 import { useGridStore } from '@/stores/useGridStore';
 import { GENRES } from '@/data/genres';
 import { getSound } from '@/data/sounds';
-import { buildKit } from './synthKit';
+import { buildKit, setVoice } from './synthKit';
 
 /**
- * Loads audio for the current genre's kit based on the grid store's current
- * genre selection. If the genre defines a `kit` (per-track `VoiceSpec`s),
- * builds it via {@link buildKit}. Genres without a kit yet (pre-Task-10) are
- * a no-op — the engine simply has nothing to play until kits are populated.
+ * Loads audio for the current genre's kit. Resolves each track's currently
+ * assigned sound ID (from the grid store's `sounds` selections) to its
+ * catalog `VoiceSpec` via {@link getSound}, assembles a full {@link GenreKit},
+ * and builds it via {@link buildKit}. Falls back to the genre's static
+ * `kit` definition for a track if its selected sound ID doesn't resolve
+ * (e.g. stale/unknown ID), and skips the track entirely if neither resolves.
  */
 export async function loadAllSounds(): Promise<void> {
-  const { genre } = useGridStore.getState();
-  const kit = GENRES[genre].kit;
-  if (!kit) return;
+  const { genre, sounds } = useGridStore.getState();
+  const genreKit = GENRES[genre].kit;
+
+  const kit = {} as GenreKit;
+  for (const track of TRACK_ORDER) {
+    const spec = getSound(sounds[track])?.spec ?? genreKit?.[track];
+    if (spec) {
+      kit[track] = spec;
+    }
+  }
+
+  if (Object.keys(kit).length === 0) return;
 
   await buildKit(kit);
 }
 
-// TODO(Task 9): swapSound + catalog-derived kit — reframe below to resolve
-// SoundVariant.spec from the catalog and rebuild the affected track's Voice
-// via synthKit, once `getSound` returns SoundVariant instead of the legacy
-// file-based SoundDefinition. For now this only updates the grid store's
-// sound assignment; the sequencer plays the genre kit built by `buildKit`.
-
 /**
- * Replaces the sound assignment for a single track.
+ * Replaces the sound assignment for a single track: resolves `soundId` to
+ * its catalog `VoiceSpec`, rebuilds the track's live voice in place via
+ * {@link setVoice} (preserving its gain/mute), and only then updates the
+ * grid store's sound assignment. No-ops if `soundId` doesn't resolve to a
+ * catalog entry.
  * @param track - The track category whose sound should be swapped.
  * @param soundId - The identifier of the new sound to assign.
  */
 export async function swapSound(track: TrackCategory, soundId: string): Promise<void> {
-  const soundDef = getSound(soundId);
-  if (soundDef) {
-    useGridStore.getState().setSound(track, soundId);
-  }
+  const spec = getSound(soundId)?.spec;
+  if (!spec) return;
+
+  await setVoice(track, spec);
+  useGridStore.getState().setSound(track, soundId);
 }

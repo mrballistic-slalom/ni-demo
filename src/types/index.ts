@@ -53,16 +53,6 @@ export type ProjectCreatePayload = Omit<Project, 'id' | 'user_id' | 'created_at'
 /** Payload for partially updating an existing project. */
 export type ProjectUpdatePayload = Partial<ProjectCreatePayload>;
 
-/** Metadata for a single audio sample in the sound catalog. */
-export interface SoundDefinition {
-  id: string;
-  name: string;
-  category: TrackCategory;
-  genre: Genre;
-  file_ogg: string;
-  file_aac: string;
-}
-
 /** A track's per-step note assignments (length 16); each entry is a note name (e.g. 'C2') or null. */
 export type NoteRow = (string | null)[];
 
