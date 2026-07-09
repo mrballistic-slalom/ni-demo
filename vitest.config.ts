@@ -13,7 +13,6 @@ export default defineConfig({
       include: [
         'src/lib/**/*.{ts,tsx}',
         'src/audio/voice.ts',
-        'src/audio/exporter.ts',
         'src/data/genres.ts',
         'src/data/sounds.ts',
         'src/theme/skins.ts',

@@ -1,13 +1,4 @@
-import { nanoid } from 'nanoid';
 import { Genre, GridState, SoundSelections, TrackVolumes, TrackCategory, TRACK_ORDER } from '@/types';
-
-/**
- * Generates a short, URL-safe unique share ID (8 characters).
- * @returns A nanoid-based identifier string.
- */
-export function generateShareId(): string {
-  return nanoid(8);
-}
 
 /**
  * Formats a BPM value as a rounded display string (e.g., `"120 BPM"`).
