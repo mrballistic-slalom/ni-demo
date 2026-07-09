@@ -3,7 +3,7 @@ import { createVoice, Voice } from './voice';
 import { GENRES } from '@/data/genres';
 import { getSound } from '@/data/sounds';
 import { useGridStore } from '@/stores/useGridStore';
-import { audioBufferToWav } from '@/lib/wav';
+import { audioBufferToWav, AudioBufferLike } from '@/lib/wav';
 import { TRACK_ORDER, STEPS_PER_BAR, TrackCategory, VoiceSpec } from '@/types';
 
 /** Minimal shape needed to connect a Voice's output into a downstream node. */
@@ -23,8 +23,13 @@ const RELEASE_TAIL_SECONDS = 2;
  * `./engine.ts`'s `initAudio`) so a dense pattern that sums close to 0 dBFS
  * live is rendered at the same relative level in the export, rather than
  * hard-clipping because the offline bus summed voices straight to 1.0.
+ *
+ * Set 3 dB below live (-9 vs -6): the offline `Tone.Limiter` has no lookahead,
+ * so it lets sub-millisecond attack transients through — sustained, dense kits
+ * (notably Lo-Fi's Rhodes pad + 808) briefly pegged the ceiling at -6. The
+ * extra headroom keeps even those safely below 0 dBFS with zero clipped samples.
  */
-const MASTER_HEADROOM_DB = -6;
+const MASTER_HEADROOM_DB = -9;
 
 /**
  * Safety-net ceiling (in decibels) for the offline master bus. Catches any
@@ -33,6 +38,54 @@ const MASTER_HEADROOM_DB = -6;
  * summed signal hard-clip.
  */
 const MASTER_LIMITER_THRESHOLD_DB = -1;
+
+/**
+ * Absolute peak-amplitude ceiling (linear, 0–1) enforced on the rendered
+ * buffer as a final, content-independent guarantee. `Tone.Limiter` is a
+ * fast compressor rather than a true brickwall limiter, so on extreme
+ * (e.g. every-step-of-every-track) patterns transients can still poke above
+ * 0 dBFS and hard-clip at the 16-bit PCM stage. This pass scans the rendered
+ * peak and, only if it exceeds the ceiling, applies a single linear gain so
+ * the exported peak is guaranteed ≤ this value with zero hard-clipping,
+ * while preserving all relative dynamics (pure gain, no distortion).
+ */
+const PEAK_CEILING = 0.9;
+
+/**
+ * Computes the maximum absolute sample value across every channel of an
+ * audio buffer.
+ */
+function bufferPeak(buffer: AudioBufferLike): number {
+  let peak = 0;
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    const data = buffer.getChannelData(ch);
+    for (let i = 0; i < data.length; i++) {
+      const abs = Math.abs(data[i]);
+      if (abs > peak) peak = abs;
+    }
+  }
+  return peak;
+}
+
+/**
+ * Returns an {@link AudioBufferLike} view of `buffer` with every sample
+ * multiplied by `scale`, without mutating the source. When `scale` is 1 the
+ * original channel data is returned as-is (no copy).
+ */
+function scaleBuffer(buffer: AudioBufferLike, scale: number): AudioBufferLike {
+  return {
+    numberOfChannels: buffer.numberOfChannels,
+    sampleRate: buffer.sampleRate,
+    length: buffer.length,
+    getChannelData(channel: number): Float32Array {
+      const src = buffer.getChannelData(channel);
+      if (scale === 1) return src;
+      const out = new Float32Array(src.length);
+      for (let i = 0; i < src.length; i++) out[i] = src[i] * scale;
+      return out;
+    },
+  };
+}
 
 /**
  * Resolves the voice spec for every track using the same priority as the
@@ -128,6 +181,10 @@ export async function renderToWav(): Promise<Blob> {
     transport.start(0);
   }, duration);
 
-  const wavBuffer = audioBufferToWav(rendered);
+  // Final peak-safety pass: guarantee the exported peak is ≤ PEAK_CEILING so
+  // the 16-bit PCM encoder never hard-clips, regardless of pattern density.
+  const peak = bufferPeak(rendered);
+  const scale = peak > PEAK_CEILING ? PEAK_CEILING / peak : 1;
+  const wavBuffer = audioBufferToWav(scaleBuffer(rendered, scale));
   return new Blob([wavBuffer], { type: 'audio/wav' });
 }
