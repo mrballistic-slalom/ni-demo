@@ -5,6 +5,7 @@ import styled from '@emotion/styled';
 import { Volume2, VolumeX, Headphones } from 'lucide-react';
 import IconButton from '@/components/common/IconButton';
 import Fader from '@/components/common/Fader';
+import { focusRing } from '@/components/common/focusRing';
 import { useGridStore } from '@/stores/useGridStore';
 import { getSound } from '@/data/sounds';
 import { TRACK_ICONS, TRACK_LABELS } from '@/data/trackMeta';
@@ -73,8 +74,7 @@ const SoundLabel = styled.button`
   }
 
   &:focus-visible {
-    outline: 2px solid var(--genre-accent);
-    outline-offset: 2px;
+    ${focusRing()}
   }
 `;
 

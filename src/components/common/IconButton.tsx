@@ -3,6 +3,7 @@
 import styled from '@emotion/styled';
 import { motion, useReducedMotion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
+import { focusRing } from './focusRing';
 
 const StyledButton = styled(motion.button)<{ $active?: boolean; $size: number }>`
   display: inline-flex;
@@ -27,8 +28,7 @@ const StyledButton = styled(motion.button)<{ $active?: boolean; $size: number }>
   }
 
   &:focus-visible {
-    outline: 2px solid var(--genre-accent);
-    outline-offset: 2px;
+    ${focusRing()}
   }
 
   &:disabled {

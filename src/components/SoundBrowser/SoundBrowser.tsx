@@ -5,6 +5,7 @@ import styled from '@emotion/styled';
 import { Play, Check } from 'lucide-react';
 import BottomSheet from '@/components/common/BottomSheet';
 import IconButton from '@/components/common/IconButton';
+import { focusRing } from '@/components/common/focusRing';
 import { TrackCategory } from '@/types';
 import { useGridStore } from '@/stores/useGridStore';
 import { getSounds } from '@/data/sounds';
@@ -61,8 +62,7 @@ const NameButton = styled.button<{ $selected: boolean }>`
   border-radius: 8px;
 
   &:focus-visible {
-    outline: 2px solid var(--genre-accent);
-    outline-offset: 2px;
+    ${focusRing()}
   }
 `;
 
@@ -106,8 +106,7 @@ const ConfirmButton = styled.button`
   transition: box-shadow 0.15s ease;
 
   &:focus-visible {
-    outline: 2px solid var(--genre-accent);
-    outline-offset: 2px;
+    ${focusRing()}
   }
 `;
 

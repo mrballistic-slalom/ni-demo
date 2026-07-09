@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import styled from '@emotion/styled';
 import { motion, useReducedMotion } from 'motion/react';
+import { focusRing } from '@/components/common/focusRing';
 import { TrackCategory } from '@/types';
 
 /** Props for {@link GridCell}. */
@@ -51,8 +52,7 @@ const Cell = styled(motion.button)<{ $active: boolean; $beat: boolean; $groupEnd
   }
 
   &:focus-visible {
-    outline: 2px solid var(--genre-accent);
-    outline-offset: 2px;
+    ${focusRing()}
   }
 
   &:active {

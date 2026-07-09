@@ -5,6 +5,7 @@ import styled from '@emotion/styled';
 import { motion, useReducedMotion } from 'motion/react';
 import { Play, Square } from 'lucide-react';
 import Fader from '@/components/common/Fader';
+import { focusRing } from '@/components/common/focusRing';
 import { useGridStore } from '@/stores/useGridStore';
 import { useTransportStore } from '@/stores/useTransportStore';
 import { startPlayback, stopPlayback, updateBpm, createSequence } from '@/audio/sequencer';
@@ -84,8 +85,7 @@ const Chip = styled.button<{ $active: boolean }>`
   transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 
   &:focus-visible {
-    outline: 2px solid var(--genre-accent);
-    outline-offset: 2px;
+    ${focusRing()}
   }
 `;
 
@@ -114,8 +114,7 @@ const PlayButton = styled(motion.button)`
   }
 
   &:focus-visible {
-    outline: 2px solid var(--genre-accent);
-    outline-offset: 3px;
+    ${focusRing(3)}
   }
 `;
 

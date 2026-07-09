@@ -3,6 +3,7 @@
 import { useCallback, type ChangeEvent } from 'react';
 import styled from '@emotion/styled';
 import { css } from '@emotion/react';
+import { focusRing } from './focusRing';
 
 const thumbStyles = css`
   appearance: none;
@@ -48,8 +49,7 @@ const StyledRange = styled.input<{ $orientation: 'horizontal' | 'vertical' }>`
   }
 
   &:focus-visible {
-    outline: 2px solid var(--genre-accent);
-    outline-offset: 3px;
+    ${focusRing(3)}
   }
 
   &:active::-webkit-slider-thumb {
