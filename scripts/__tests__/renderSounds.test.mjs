@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { encodeWAV, synthKick, synthSnare, synthHat, synthFx } from '../renderSounds.mjs';
 
-const rms = a => Math.sqrt(a.reduce((n,x)=>n+x*x,0)/a.length);
-const peak = a => Math.max(...Array.from(a, Math.abs));
+function rms(samples) {
+  const sumOfSquares = samples.reduce((sum, x) => sum + x * x, 0);
+  return Math.sqrt(sumOfSquares / samples.length);
+}
+
+function peak(samples) {
+  return Math.max(...Array.from(samples, Math.abs));
+}
 
 const GENRES = ['trap', 'lofi', 'house', 'drill', 'hyperpop'];
 
@@ -24,10 +30,16 @@ describe('renderSounds DSP', () => {
       expect(peak(synthFx({ genre, variant: 1 }))).toBeGreaterThan(0.02);
     }
   });
-  it('variants differ', () => {
+  it('variants differ deterministically via frequency/duration params, not just the random click', () => {
     const a = synthKick({ genre: 'trap', variant: 1 });
     const b = synthKick({ genre: 'trap', variant: 3 });
-    expect(peak(a)).not.toBe(peak(b));
+
+    // Variant duration scaling is deterministic: different variants render different lengths.
+    expect(a.length).not.toBe(b.length);
+
+    // Sample well past the randomized click window (~132 samples) isolates the deterministic
+    // sine body, which differs because variant scales the starting frequency (f0).
+    expect(a[5000]).not.toBeCloseTo(b[5000], 5);
   });
 
   it('kick decays and is non-silent across every genre', () => {

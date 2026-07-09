@@ -12,6 +12,22 @@ const voices: Partial<Record<TrackCategory, Voice>> = {};
 const gains: Partial<Record<TrackCategory, ToneTypes.Gain>> = {};
 
 /**
+ * Returns the track's existing `Tone.Gain` node, or creates one (wired to
+ * the master destination) if the track doesn't have one yet. Shared by
+ * {@link buildKit} and {@link setVoice} so a track's gain/mute level
+ * survives both a full kit rebuild and a single-sound swap.
+ */
+function ensureGain(track: TrackCategory, Tone: typeof ToneTypes): ToneTypes.Gain {
+  let gain = gains[track];
+  if (!gain) {
+    gain = new Tone.Gain(1);
+    gain.connect(Tone.getDestination());
+    gains[track] = gain;
+  }
+  return gain;
+}
+
+/**
  * Builds the current genre's kit of audio voices, one per track, each routed
  * through its own `Tone.Gain` node into the master destination. Disposes any
  * previously built kit first so repeated genre switches don't leak nodes.
@@ -30,12 +46,10 @@ export async function buildKit(kit: Partial<GenreKit>): Promise<void> {
     if (!spec) continue;
 
     const voice = createVoice(spec);
-    const gain = new Tone.Gain(1);
+    const gain = ensureGain(track, Tone);
     (voice.output as Connectable).connect(gain);
-    gain.connect(Tone.getDestination());
 
     voices[track] = voice;
-    gains[track] = gain;
   }
 
   await Tone.loaded();
@@ -56,12 +70,7 @@ export async function setVoice(track: TrackCategory, spec: VoiceSpec): Promise<v
   voices[track]?.dispose();
 
   const voice = createVoice(spec);
-  let gain = gains[track];
-  if (!gain) {
-    gain = new Tone.Gain(1);
-    gain.connect(Tone.getDestination());
-    gains[track] = gain;
-  }
+  const gain = ensureGain(track, Tone);
   (voice.output as Connectable).connect(gain);
 
   voices[track] = voice;

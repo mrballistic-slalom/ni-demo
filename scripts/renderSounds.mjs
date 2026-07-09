@@ -120,6 +120,16 @@ const GENRES = ['trap', 'lofi', 'house', 'drill', 'hyperpop'];
 const VARIANT_FREQ_STEP = 0.05;
 const VARIANT_DUR_STEP = 0.06;
 
+/** Scales a genre-tuned frequency parameter for variant 1-3 (5% step per variant). */
+function variantFreqMult(variant) {
+  return 1 + (variant - 1) * VARIANT_FREQ_STEP;
+}
+
+/** Scales a genre-tuned base duration for variant 1-3 (6% step per variant). */
+function variantDuration(baseDuration, variant) {
+  return baseDuration * (1 + (variant - 1) * VARIANT_DUR_STEP);
+}
+
 // ---------------------------------------------------------------------------
 // Instrument synths
 // ---------------------------------------------------------------------------
@@ -127,8 +137,8 @@ const VARIANT_DUR_STEP = 0.06;
 /** Pitch-enveloped layered kick: sine body sweeping f0 -> f1 + a short noise click, saturated. */
 function synthKick({ genre, variant = 1 }) {
   const p = KICK_PARAMS[genre] || KICK_PARAMS.trap;
-  const freqMult = 1 + (variant - 1) * VARIANT_FREQ_STEP;
-  const duration = p.duration * (1 + (variant - 1) * VARIANT_DUR_STEP);
+  const freqMult = variantFreqMult(variant);
+  const duration = variantDuration(p.duration, variant);
   const n = Math.max(1, Math.floor(SAMPLE_RATE * duration));
   const out = new Float32Array(n);
   const f0 = p.f0 * freqMult;
@@ -150,8 +160,8 @@ function synthKick({ genre, variant = 1 }) {
 /** Bandpassed noise body + tuned tone, genre-tuned brightness/decay. */
 function synthSnare({ genre, variant = 1 }) {
   const p = SNARE_PARAMS[genre] || SNARE_PARAMS.trap;
-  const freqMult = 1 + (variant - 1) * VARIANT_FREQ_STEP;
-  const duration = p.duration * (1 + (variant - 1) * VARIANT_DUR_STEP);
+  const freqMult = variantFreqMult(variant);
+  const duration = variantDuration(p.duration, variant);
   const n = Math.max(1, Math.floor(SAMPLE_RATE * duration));
   const rawNoise = noise(n);
   const filteredNoise = bandpass(rawNoise, p.bpLow * freqMult, p.bpHigh * freqMult);
@@ -172,8 +182,8 @@ function synthSnare({ genre, variant = 1 }) {
 /** Highpassed noise, very short — genre varies brightness (cutoff) and decay. */
 function synthHat({ genre, variant = 1 }) {
   const p = HAT_PARAMS[genre] || HAT_PARAMS.trap;
-  const freqMult = 1 + (variant - 1) * VARIANT_FREQ_STEP;
-  const duration = p.duration * (1 + (variant - 1) * VARIANT_DUR_STEP);
+  const freqMult = variantFreqMult(variant);
+  const duration = variantDuration(p.duration, variant);
   const n = Math.max(1, Math.floor(SAMPLE_RATE * duration));
   const raw = noise(n);
   const filtered = onePoleHighpass(raw, p.cutoff * freqMult);
@@ -188,8 +198,8 @@ function synthHat({ genre, variant = 1 }) {
 /** Filtered-noise sweep / riser used for genre fx one-shots. */
 function synthFx({ genre, variant = 1 }) {
   const p = FX_PARAMS[genre] || FX_PARAMS.trap;
-  const freqMult = 1 + (variant - 1) * VARIANT_FREQ_STEP;
-  const duration = p.duration * (1 + (variant - 1) * VARIANT_DUR_STEP);
+  const freqMult = variantFreqMult(variant);
+  const duration = variantDuration(p.duration, variant);
   const n = Math.max(1, Math.floor(SAMPLE_RATE * duration));
   const raw = noise(n);
   const swept = p.rising
