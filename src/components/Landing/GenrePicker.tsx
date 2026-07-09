@@ -98,6 +98,14 @@ export interface GenrePickerProps {
   id?: string;
 }
 
+/** Scale/opacity target for a genre card during the pick morph. */
+function getCardAnimation(prefersReducedMotion: boolean, isPicked: boolean, isOther: boolean) {
+  if (prefersReducedMotion) return undefined;
+  if (isPicked) return { scale: 1.08, opacity: 1 };
+  if (isOther) return { scale: 0.94, opacity: 0.25 };
+  return { scale: 1, opacity: 1 };
+}
+
 /**
  * The landing page's genre picker: one card per genre, each rendered in
  * that genre's own skin (colors, geometry, display font) all at once, with
@@ -147,15 +155,7 @@ export default function GenrePicker({ id }: GenrePickerProps) {
               className={DISPLAY_FONT_CLASS[genreId]}
               aria-label={`Pick ${genre.label} — ${genre.tagline}`}
               whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
-              animate={
-                prefersReducedMotion
-                  ? undefined
-                  : isPicked
-                    ? { scale: 1.08, opacity: 1 }
-                    : isOther
-                      ? { scale: 0.94, opacity: 0.25 }
-                      : { scale: 1, opacity: 1 }
-              }
+              animate={getCardAnimation(!!prefersReducedMotion, isPicked, isOther)}
               transition={{ duration: MORPH_MS / 1000, ease: 'easeOut' }}
             >
               <PreviewFrame style={skinToCssVars(skin)}>

@@ -121,18 +121,22 @@ export default function Hero({ onCtaClick }: HeroProps) {
     }
   }, []);
 
+  const ctaButton = (
+    <CtaButton
+      type="button"
+      onClick={onCtaClick}
+      whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+    >
+      Pick your sound
+    </CtaButton>
+  );
+
   if (compact) {
     return (
       <Section layout={!prefersReducedMotion} transition={{ duration: 0.3 }} data-testid="hero-compact">
         <CompactBar>
           <Wordmark $compact className={DISPLAY_FONT_CLASS.trap}>NI Play</Wordmark>
-          <CtaButton
-            type="button"
-            onClick={onCtaClick}
-            whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
-          >
-            Pick your sound
-          </CtaButton>
+          {ctaButton}
         </CompactBar>
       </Section>
     );
@@ -151,13 +155,7 @@ export default function Hero({ onCtaClick }: HeroProps) {
       <PreviewFrame style={skinToCssVars(previewSkin)}>
         <MiniGrid grid={GENRES.house.template.grid} cellSize={9} gap={3} />
       </PreviewFrame>
-      <CtaButton
-        type="button"
-        onClick={onCtaClick}
-        whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
-      >
-        Pick your sound
-      </CtaButton>
+      {ctaButton}
     </Section>
   );
 }
