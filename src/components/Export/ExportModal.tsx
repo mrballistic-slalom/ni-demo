@@ -1,86 +1,133 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import CircularProgress from '@mui/material/CircularProgress';
-import CloseRounded from '@mui/icons-material/CloseRounded';
+import { useCallback, useState } from 'react';
+import styled from '@emotion/styled';
+import { Download, Loader2 } from 'lucide-react';
+import BottomSheet from '@/components/common/BottomSheet';
+import { focusRing } from '@/components/common/focusRing';
+import { renderToWav } from '@/audio/exporter';
 import { useGridStore } from '@/stores/useGridStore';
 import { useProjectStore } from '@/stores/useProjectStore';
 
 /** Props for {@link ExportModal}. */
 interface ExportModalProps {
-  /** Whether the modal is currently visible. */
+  /** Whether the sheet is currently visible. */
   open: boolean;
-  /** Callback to close the modal. */
+  /** Callback to close the sheet. */
   onClose: () => void;
 }
 
+const Description = styled.p`
+  margin: 0 0 16px;
+  color: var(--genre-text-dim);
+  font-size: 0.85rem;
+`;
+
+const ExportButton = styled.button`
+  appearance: none;
+  border: none;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: var(--genre-primary);
+  color: var(--genre-surface);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 0 var(--genre-glow-blur, 12px) var(--genre-glow);
+  transition: box-shadow 0.15s ease, opacity 0.15s ease;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    ${focusRing()}
+  }
+`;
+
+const Spinner = styled(Loader2)`
+  animation: spin 0.8s linear infinite;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const Meta = styled.p`
+  margin: 12px 0 0;
+  color: var(--genre-text-dim);
+  font-size: 0.75rem;
+`;
+
+const ErrorText = styled.p`
+  margin: 12px 0 0;
+  color: #ff6b6b;
+  font-size: 0.8rem;
+`;
+
 /**
- * Modal dialog for exporting the current beat as an audio file.
- * Currently shows a placeholder; full offline rendering via Tone.Offline
- * is planned for a future release.
+ * Bottom-sheet for exporting the current beat as a downloadable WAV file.
+ * Rendering happens off the main sequencer clock via
+ * {@link renderToWav}'s `Tone.Offline` pass, so it's safe to trigger even
+ * while the live beat is playing. Shows a spinner while the (async, can
+ * take a moment) render is in flight, then downloads the resulting `Blob`
+ * via a temporary object URL, or shows an inline error message on failure.
  */
 export default function ExportModal({ open, onClose }: ExportModalProps) {
   const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const genre = useGridStore((s) => s.genre);
   const bpm = useGridStore((s) => s.bpm);
   const title = useProjectStore((s) => s.currentTitle);
 
-  const handleExport = useCallback(async (_format: 'wav') => {
+  const handleExport = useCallback(async () => {
     setExporting(true);
+    setError(null);
     try {
-      // For MVP, create a simple notification that export is coming soon
-      // Full offline rendering would use Tone.Offline
-      alert('Export feature coming soon! For now, use screen recording to capture your beat.');
+      const blob = await renderToWav();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${genre}-${Math.round(bpm)}bpm.wav`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('WAV export failed:', err);
+      setError("Couldn't export your beat. Please try again.");
     } finally {
       setExporting(false);
     }
-  }, []);
+  }, [genre, bpm]);
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{
-        sx: {
-          backgroundColor: '#1A1A1A',
-          borderRadius: 3,
-        },
-      }}
-    >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>Export Beat</Typography>
-        <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
-          <CloseRounded />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-          Download your beat as an audio file.
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Button
-            variant="contained"
-            onClick={() => handleExport('wav')}
-            disabled={exporting}
-            startIcon={exporting ? <CircularProgress size={16} /> : null}
-            sx={{ backgroundColor: 'var(--genre-primary)' }}
-          >
-            {exporting ? 'Rendering...' : 'Export WAV'}
-          </Button>
-        </Box>
-        <Typography variant="caption" sx={{ color: 'text.secondary', mt: 2, display: 'block' }}>
-          {title} &middot; {genre} &middot; {bpm} BPM
-        </Typography>
-      </DialogContent>
-    </Dialog>
+    <BottomSheet open={open} onClose={onClose} title="Export">
+      <Description>Download your beat as a WAV file.</Description>
+
+      <ExportButton type="button" onClick={handleExport} disabled={exporting}>
+        {exporting ? (
+          <Spinner size={18} strokeWidth={2.25} aria-hidden="true" />
+        ) : (
+          <Download size={18} strokeWidth={2.25} aria-hidden="true" />
+        )}
+        {exporting ? 'Rendering…' : 'Export WAV'}
+      </ExportButton>
+
+      {error && <ErrorText role="alert">{error}</ErrorText>}
+
+      <Meta>
+        {title} · {genre} · {Math.round(bpm)} BPM
+      </Meta>
+    </BottomSheet>
   );
 }
